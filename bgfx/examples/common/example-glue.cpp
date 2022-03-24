@@ -80,12 +80,15 @@ static bool bar(float _width, float _maxWidth, float _height, const ImVec4& _col
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, style.ItemSpacing.y) );
 
 	bool itemHovered = false;
-
+	ImGui::PushID(1);
 	ImGui::Button("", ImVec2(_width, _height) );
+	ImGui::PopID();
 	itemHovered |= ImGui::IsItemHovered();
 
 	ImGui::SameLine();
+	ImGui::PushID(2);
 	ImGui::InvisibleButton("", ImVec2(bx::max(1.0f, _maxWidth-_width), _height) );
+	ImGui::PopID();
 	itemHovered |= ImGui::IsItemHovered();
 
 	ImGui::PopStyleVar(2);
