@@ -11,6 +11,57 @@
 
 namespace
 {
+	struct PosColorVertex
+	{
+		float m_x;
+		float m_y;
+		float m_z;
+		uint32_t m_abgr;
+
+		static void init()
+		{
+			ms_layout
+				.begin()
+				.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+				.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+				.end();
+		};
+
+		static bgfx::VertexLayout ms_layout;
+	};
+
+	bgfx::VertexLayout PosColorVertex::ms_layout;
+
+	static PosColorVertex s_cubeVertices[] =
+	{
+		{-1.0f,  1.0f,  1.0f, 0xfff00fff },
+		{ 1.0f,  1.0f,  1.0f, 0xfff00fff },
+		{-1.0f, -1.0f,  1.0f, 0xfff00000 },
+		{ 1.0f, -1.0f,  1.0f, 0xfff00000 },
+		{-1.0f,  1.0f, -1.0f, 0x00000fff },
+		{ 1.0f,  1.0f, -1.0f, 0x00000fff },
+		{-1.0f, -1.0f, -1.0f, 0x00ffff00 },
+		{ 1.0f, -1.0f, -1.0f, 0x00ffff00 },
+	};
+
+	static const uint16_t s_cubeTriList[] =
+	{
+		0, 1, 2, // 0
+		1, 3, 2,
+		4, 6, 5, // 2
+		5, 6, 7,
+		0, 2, 4, // 4
+		4, 2, 6,
+		1, 5, 3, // 6
+		5, 7, 3,
+		0, 4, 1, // 8
+		4, 5, 1,
+		2, 3, 6, // 10
+		6, 3, 7,
+	};
+
+	static const uint64_t s_ptState = UINT64_C(0);
+
 
 class EStarHomework : public entry::AppI
 {
@@ -52,12 +103,38 @@ public:
 			, 0
 			);
 
+		// Create vertex stream declaration.
+		PosColorVertex::init();
+
+		// Create static vertex buffer.
+		m_vbh = bgfx::createVertexBuffer(
+			// Static data can be passed with bgfx::makeRef
+			bgfx::makeRef(s_cubeVertices, sizeof(s_cubeVertices))
+			, PosColorVertex::ms_layout
+		);
+
+		// Create static index buffer for triangle list rendering.
+		m_ibh = bgfx::createIndexBuffer(
+			// Static data can be passed with bgfx::makeRef
+			bgfx::makeRef(s_cubeTriList, sizeof(s_cubeTriList))
+		);
+
+		// Create program from shaders.
+		m_program = loadProgram("vs_cubes", "fs_cubes");
+
+		m_timeOffset = bx::getHPCounter();
+
 		imguiCreate();
 	}
 
 	virtual int shutdown() override
 	{
 		imguiDestroy();
+
+		// Cleanup.
+		bgfx::destroy(m_ibh);
+		bgfx::destroy(m_vbh);
+		bgfx::destroy(m_program);
 
 		// Shutdown bgfx.
 		bgfx::shutdown();
@@ -81,7 +158,35 @@ public:
 
 			showExampleDialog(this);
 
+			ImGui::SetNextWindowPos(
+				ImVec2(m_width - m_width / 5.0f - 10.0f, 10.0f)
+				, ImGuiCond_FirstUseEver
+			);
+			ImGui::SetNextWindowSize(
+				ImVec2(m_width / 5.0f, m_height / 3.5f)
+				, ImGuiCond_FirstUseEver
+			);
+			ImGui::Begin("Settings"
+				, NULL
+				, 0
+			);
+
+			ImGui::End();
+
 			imguiEndFrame();
+
+			float time = (float)((bx::getHPCounter() - m_timeOffset) / double(bx::getHPFrequency()));
+
+			const bx::Vec3 at = { 0.0f, 0.0f,   0.0f };
+			const bx::Vec3 eye = { 0.0f, 0.0f, -35.0f };
+
+			// Set view and projection matrix for view 0.
+			float view[16];
+			bx::mtxLookAt(view, eye, at);
+
+			float proj[16];
+			bx::mtxProj(proj, 60.0f, float(m_width) / float(m_height), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+			bgfx::setViewTransform(0, view, proj);
 
 			// Set view 0 default viewport.
 			bgfx::setViewRect(0, 0, 0, uint16_t(m_width), uint16_t(m_height) );
@@ -90,16 +195,34 @@ public:
 			// if no other draw calls are submitted to view 0.
 			bgfx::touch(0);
 
-			// Use debug font to print information about this example.
-			bgfx::dbgTextClear();
-			bgfx::dbgTextImage(
-				  bx::max<uint16_t>(uint16_t(m_width /2/8 ), 20)-20
-				, bx::max<uint16_t>(uint16_t(m_height/2/16),  6)-6
-				, 40
-				, 12
-				, s_logo
-				, 160
-				);
+			uint64_t state = 0
+				| BGFX_STATE_WRITE_R
+				| BGFX_STATE_WRITE_G
+				| BGFX_STATE_WRITE_B
+				| BGFX_STATE_WRITE_A
+				| BGFX_STATE_WRITE_Z
+				| BGFX_STATE_DEPTH_TEST_LESS
+				| BGFX_STATE_CULL_CW
+				| BGFX_STATE_MSAA
+				| s_ptState
+				;
+
+			// Submit 1 cubes.
+			float mtx[16];
+			bx::mtxSRT(mtx, 7, 7, 7, time + 0.21f, time + 0.37f, 0, 0, 0, 0);
+
+			// Set model matrix for rendering.
+			bgfx::setTransform(mtx);
+
+			// Set vertex and index buffer.
+			bgfx::setVertexBuffer(0, m_vbh);
+			bgfx::setIndexBuffer(m_ibh);
+
+			// Set render states.
+			bgfx::setState(state);
+
+			// Submit primitive for rendering to view 0.
+			bgfx::submit(0, m_program);
 
 			// Advance to next frame. Rendering thread will be kicked to
 			// process submitted rendering primitives.
@@ -117,6 +240,11 @@ public:
 	uint32_t m_height;
 	uint32_t m_debug;
 	uint32_t m_reset;
+
+	bgfx::VertexBufferHandle m_vbh;
+	bgfx::IndexBufferHandle m_ibh;
+	bgfx::ProgramHandle m_program;
+	int64_t m_timeOffset;
 };
 
 } // namespace
