@@ -2,7 +2,6 @@
  * Copyright 2011-2022 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bgfx/blob/master/LICENSE
  */
-
 #include <bx/uint32_t.h>
 #include "common.h"
 #include "bgfx_utils.h"
@@ -61,7 +60,6 @@ namespace
 	};
 
 	static const uint64_t s_ptState = UINT64_C(0);
-
 
 class EStarHomework : public entry::AppI
 {
@@ -171,14 +169,39 @@ public:
 				, 0
 			);
 
+
 			ImGui::End();
 
 			imguiEndFrame();
 
+			// ---------------------------------- Input Events
+			// 
+			// 如果按住左键，则拖拽旋转镜头
+			if (ImGui::GetIO().MouseDown[0]) {
+				m_mousex += ImGui::GetIO().MouseDelta.x;
+				m_mousey += ImGui::GetIO().MouseDelta.y;
+			}
+			//m_mousex = bx::clamp(m_mousex,-90.0f ,90.0f );
+			m_mousey = bx::clamp(m_mousey,-90.0f ,90.0f );
+			// 滚轮缩放镜头
+			float mouseScroll = 1.0f+ 0.05f * m_mouseState.m_mz;
+
+			// ---------------------------------- Logic Events
+			//
 			float time = (float)((bx::getHPCounter() - m_timeOffset) / double(bx::getHPFrequency()));
 
-			const bx::Vec3 at = { 0.0f, 0.0f,   0.0f };
-			const bx::Vec3 eye = { 0.0f, 0.0f, -35.0f };
+			// 镜头目标
+			const bx::Vec3 at = { 0.0f, 0.0f, 0.0f };
+
+			// 镜头位置
+			float cameraRadius = 35.0f;
+			cameraRadius *= mouseScroll;
+			float horizonRadius = bx::cos(m_mousey * 0.01f);
+			const bx::Vec3 eye = { 
+				cameraRadius * bx::sin(m_mousex * 0.01f) * horizonRadius,
+				cameraRadius * bx::sin(m_mousey * 0.01f),
+				cameraRadius * bx::cos(m_mousex * 0.01f) * horizonRadius
+			};
 
 			// Set view and projection matrix for view 0.
 			float view[16];
@@ -209,7 +232,7 @@ public:
 
 			// Submit 1 cubes.
 			float mtx[16];
-			bx::mtxSRT(mtx, 7, 7, 7, time + 0.21f, time + 0.37f, 0, 0, 0, 0);
+			bx::mtxSRT(mtx, 7, 7, 7, 0.21f, 0.37f, 0, 0, 0, 0);
 
 			// Set model matrix for rendering.
 			bgfx::setTransform(mtx);
@@ -241,10 +264,15 @@ public:
 	uint32_t m_debug;
 	uint32_t m_reset;
 
+	// 绘制相关
 	bgfx::VertexBufferHandle m_vbh;
 	bgfx::IndexBufferHandle m_ibh;
 	bgfx::ProgramHandle m_program;
 	int64_t m_timeOffset;
+
+	// 输入相关
+	float m_mousex = 0.0f;
+	float m_mousey = 0.0f;
 };
 
 } // namespace
