@@ -3,37 +3,7 @@
 #include "bgfx_logo.h"
 #include "imgui/imgui.h"
 
-bgfx::VertexLayout Level2::PosColorVertex::ms_layout = {};
-
-Level2::PosColorVertex Level2::s_cubeVertices[] =
-{
-	{-1.0f,  1.0f,  1.0f, 0xfff00fff },
-	{ 1.0f,  1.0f,  1.0f, 0xfff00fff },
-	{-1.0f, -1.0f,  1.0f, 0xfff00000 },
-	{ 1.0f, -1.0f,  1.0f, 0xfff00000 },
-	{-1.0f,  1.0f, -1.0f, 0x00000fff },
-	{ 1.0f,  1.0f, -1.0f, 0x00000fff },
-	{-1.0f, -1.0f, -1.0f, 0x00ffff00 },
-	{ 1.0f, -1.0f, -1.0f, 0x00ffff00 },
-};
-
-const uint16_t Level2::s_cubeTriList[] =
-{
-	0, 1, 2, // 0
-	1, 3, 2,
-	4, 6, 5, // 2
-	5, 6, 7,
-	0, 2, 4, // 4
-	4, 2, 6,
-	1, 5, 3, // 6
-	5, 7, 3,
-	0, 4, 1, // 8
-	4, 5, 1,
-	2, 3, 6, // 10
-	6, 3, 7,
-};
-
-const uint64_t Level2::s_ptState = UINT64_C(0);
+bgfx::VertexLayout Level2::PosNormalTexcoordVertex::ms_layout = {};
 
 Level2::Level2(const char* _name, const char* _description, const char* _url)
 	: entry::AppI(_name, _description, _url)
@@ -73,23 +43,23 @@ void Level2::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint
 	);
 
 	// Create vertex stream declaration.
-	PosColorVertex::init();
+	PosNormalTexcoordVertex::init();
 
-	// Create static vertex buffer.
-	m_vbh = bgfx::createVertexBuffer(
-		// Static data can be passed with bgfx::makeRef
-		bgfx::makeRef(s_cubeVertices, sizeof(s_cubeVertices))
-		, PosColorVertex::ms_layout
-	);
-
-	// Create static index buffer for triangle list rendering.
-	m_ibh = bgfx::createIndexBuffer(
-		// Static data can be passed with bgfx::makeRef
-		bgfx::makeRef(s_cubeTriList, sizeof(s_cubeTriList))
-	);
+	// Create texture sampler uniforms.
+	s_texColor = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+	u_k					= bgfx::createUniform("u_k", bgfx::UniformType::Vec4);
+	u_lightPos			= bgfx::createUniform("u_lightPos", bgfx::UniformType::Vec4);
+	u_ambientIntensity	= bgfx::createUniform("u_ambientIntensity", bgfx::UniformType::Vec4);
+	u_lightIntensity	= bgfx::createUniform("u_lightIntensity", bgfx::UniformType::Vec4);
 
 	// Create program from shaders.
-	m_program = loadProgram("vs_cubes", "fs_cubes");
+	m_program = loadProgram("vs_cubes_blinnphong", "fs_cubes_blinnphong");
+
+	// Load diffuse texture.
+	m_textureColor = loadTexture("resource/pbr_stone/pbr_stone_base_color.dds", BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP);
+
+
+	m_mesh = meshLoad("resource/pbr_stone/pbr_stone_mes.bin");
 
 	m_timeOffset = bx::getHPCounter();
 
@@ -101,8 +71,13 @@ int Level2::shutdown()
 	imguiDestroy();
 
 	// Cleanup.
-	bgfx::destroy(m_ibh);
-	bgfx::destroy(m_vbh);
+	meshUnload(m_mesh);
+	bgfx::destroy(m_textureColor);
+	bgfx::destroy(s_texColor);
+	bgfx::destroy(u_k);
+	bgfx::destroy(u_lightPos);
+	bgfx::destroy(u_ambientIntensity);
+	bgfx::destroy(u_lightIntensity);
 	bgfx::destroy(m_program);
 
 	// Shutdown bgfx.
@@ -145,6 +120,14 @@ bool Level2::update()
 
 		imguiEndFrame();
 
+		// Set view 0 default viewport.
+		bgfx::setViewRect(0, 0, 0, uint16_t(m_width), uint16_t(m_height));
+
+		// This dummy draw call is here to make sure that view 0 is cleared
+		// if no other draw calls are submitted to view 0.
+		bgfx::touch(0);
+
+
 		// ---------------------------------- Input Events
 		// 
 		// 如果按住左键，则拖拽旋转镜头
@@ -168,10 +151,13 @@ bool Level2::update()
 		float cameraRadius = 35.0f;
 		cameraRadius *= mouseScroll;
 		float horizonRadius = bx::cos(m_mousey * 0.01f);
-		const bx::Vec3 eye = {
+		float eyePos[4] = {
 			cameraRadius * bx::sin(m_mousex * 0.01f) * horizonRadius,
 			cameraRadius * bx::sin(m_mousey * 0.01f),
 			cameraRadius * bx::cos(m_mousex * 0.01f) * horizonRadius
+		};
+		const bx::Vec3 eye = {
+			eyePos[0],eyePos[1],eyePos[2]
 		};
 
 		// Set view and projection matrix for view 0.
@@ -181,14 +167,30 @@ bool Level2::update()
 		float proj[16];
 		bx::mtxProj(proj, 60.0f, float(m_width) / float(m_height), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
 		bgfx::setViewTransform(0, view, proj);
+		
+		// 系数相关
+		float k[4] = { 0.2f,0.6f,0.2f,6.0f};
+		bgfx::setUniform(u_k, k);
 
-		// Set view 0 default viewport.
-		bgfx::setViewRect(0, 0, 0, uint16_t(m_width), uint16_t(m_height));
+		// 灯光相关
+		float ambientIntensity[4] = { 2.0f,10.0f,5.0f,0.0f };
+		bgfx::setUniform(u_ambientIntensity,ambientIntensity);
+		float lightPos[4] ={bx::sin(time) * 3.0f,5.0f,bx::cos(time) * 3.0f,0.0f};
+		bgfx::setUniform(u_lightPos, lightPos);
+		float lightIntensity[4] ={100.0f, 100.0f, 100.0f,0.0f};
+		bgfx::setUniform(u_lightIntensity, lightIntensity);
 
-		// This dummy draw call is here to make sure that view 0 is cleared
-		// if no other draw calls are submitted to view 0.
-		bgfx::touch(0);
+		// Submit 1 cubes.
+		float mtx[16];
+		bx::mtxSRT(mtx, 7, 7, 7, 0.21f, 0.37f, 0, 0, 0, 0);
 
+		// Set model matrix for rendering.
+		bgfx::setTransform(mtx);
+
+		// Bind textures.
+		bgfx::setTexture(0, s_texColor, m_textureColor);
+
+		// Set render states.
 		uint64_t state = 0
 			| BGFX_STATE_WRITE_R
 			| BGFX_STATE_WRITE_G
@@ -198,25 +200,13 @@ bool Level2::update()
 			| BGFX_STATE_DEPTH_TEST_LESS
 			| BGFX_STATE_CULL_CW
 			| BGFX_STATE_MSAA
-			| s_ptState
 			;
-
-		// Submit 1 cubes.
-		float mtx[16];
-		bx::mtxSRT(mtx, 7, 7, 7, 0.21f, 0.37f, 0, 0, 0, 0);
-
-		// Set model matrix for rendering.
-		bgfx::setTransform(mtx);
-
-		// Set vertex and index buffer.
-		bgfx::setVertexBuffer(0, m_vbh);
-		bgfx::setIndexBuffer(m_ibh);
-
-		// Set render states.
 		bgfx::setState(state);
 
+		// 提交渲染命令
+		meshSubmit(m_mesh,0, m_program, NULL);
 		// Submit primitive for rendering to view 0.
-		bgfx::submit(0, m_program);
+		// bgfx::submit(0, m_program);
 
 		// Advance to next frame. Rendering thread will be kicked to
 		// process submitted rendering primitives.

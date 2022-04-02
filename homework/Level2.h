@@ -20,11 +20,21 @@ private:
 	uint32_t m_height;
 	uint32_t m_debug;
 	uint32_t m_reset;
+	
+	// 模型
+	Mesh* m_mesh;
 
 	// 绘制相关
-	bgfx::VertexBufferHandle m_vbh;
-	bgfx::IndexBufferHandle m_ibh;
+	bgfx::TextureHandle m_textureColor;
+	bgfx::UniformHandle s_texColor;
+
+	bgfx::UniformHandle u_k;
+	bgfx::UniformHandle u_lightPos;
+	bgfx::UniformHandle u_ambientIntensity;
+	bgfx::UniformHandle u_lightIntensity;
+
 	bgfx::ProgramHandle m_program;
+
 	int64_t m_timeOffset;
 
 	// 输入相关
@@ -33,23 +43,22 @@ private:
 	float m_mousey = 0.0f;
 
 private:
-	struct PosColorVertex
+	struct PosNormalTexcoordVertex
 	{
 		float m_x;
 		float m_y;
 		float m_z;
-		uint32_t m_abgr;
+		int16_t m_u;
+		int16_t m_v;
 		static void init()
 		{
 			ms_layout
 				.begin()
 				.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-				.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+				.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
+				.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16, true, true)
 				.end();
 		};
 		static bgfx::VertexLayout ms_layout;
 	};
-	static PosColorVertex s_cubeVertices[];
-	static const uint16_t s_cubeTriList[];
-	static const uint64_t s_ptState;
 };
