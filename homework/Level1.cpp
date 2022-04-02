@@ -33,8 +33,6 @@ const uint16_t Level1::s_cubeTriList[] =
 	6, 3, 7,
 };
 
-const uint64_t Level1::s_ptState = UINT64_C(0);
-
 Level1::Level1(const char* _name, const char* _description, const char* _url)
 	: entry::AppI(_name, _description, _url)
 {
@@ -198,7 +196,7 @@ bool Level1::update()
 			| BGFX_STATE_DEPTH_TEST_LESS
 			| BGFX_STATE_CULL_CW
 			| BGFX_STATE_MSAA
-			| s_ptState
+			| UINT64_C(0)
 			;
 
 		// Submit 1 cubes.

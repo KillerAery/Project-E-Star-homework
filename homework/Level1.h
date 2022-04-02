@@ -48,5 +48,4 @@ public:
 	};
 	static PosColorVertex s_cubeVertices[];
 	static const uint16_t s_cubeTriList[];
-	static const uint64_t s_ptState;
 };
