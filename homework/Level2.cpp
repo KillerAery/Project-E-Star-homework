@@ -2,6 +2,7 @@
 #include <bx/uint32_t.h>
 #include "bgfx_logo.h"
 #include "imgui/imgui.h"
+#include <entry/input.h>
 
 bgfx::VertexLayout Level2::PosNormalTexcoordVertex::ms_layout = {};
 
@@ -90,6 +91,11 @@ bool Level2::update()
 {
 	if (!entry::processEvents(m_width, m_height, m_debug, m_reset, &m_mouseState))
 	{
+		auto charType = inputGetChar();
+		uint8_t untype = -1;
+		if (charType == nullptr) {
+			charType = &untype;
+		}
 		imguiBeginFrame(m_mouseState.m_mx
 			, m_mouseState.m_my
 			, (m_mouseState.m_buttons[entry::MouseButton::Left] ? IMGUI_MBUT_LEFT : 0)
@@ -98,6 +104,7 @@ bool Level2::update()
 			, m_mouseState.m_mz
 			, uint16_t(m_width)
 			, uint16_t(m_height)
+			, *charType
 		);
 
 		showExampleDialog(this);
@@ -139,26 +146,47 @@ bool Level2::update()
 		m_mousey = bx::clamp(m_mousey, -90.0f, 90.0f);
 		// 滚轮缩放镜头
 		float mouseScroll = 1.0f + 0.05f * m_mouseState.m_mz;
+		// WASD平移镜头
+		float keyForward = 0.0f;
+		float keyLeft = 0.0f;
+		if (inputGetKeyState(entry::Key::KeyW)) {
+			keyForward += 1.0f;
+		}		
+		if (inputGetKeyState(entry::Key::KeyS)) {
+			keyForward -= 1.0f;
+		}
+		if (inputGetKeyState(entry::Key::KeyA)) {
+			keyLeft += 1.0f;
+		}
+		if (inputGetKeyState(entry::Key::KeyD)) {
+			keyLeft -= 1.0f;
+		}
 
 		// ---------------------------------- Logic Events
 		//
 		float time = (float)((bx::getHPCounter() - m_timeOffset) / double(bx::getHPFrequency()));
 
-		// 镜头目标
-		const bx::Vec3 at = { 0.0f, 0.0f, 0.0f };
+		// 相机相关
+		m_cameraOffset = bx::add(m_cameraOffset,
+			bx::add(bx::mul(m_cameraRight, keyLeft * 0.01f),
+				bx::mul(m_cameraForward, keyForward * 0.01f))
+		);
+		// 相机目标
+		const bx::Vec3 at = m_cameraOffset;
 
-		// 镜头位置
+		// 相机位置
 		float cameraRadius = 35.0f;
 		cameraRadius *= mouseScroll;
 		float horizonRadius = bx::cos(m_mousey * 0.01f);
-		float eyePos[4] = {
-			cameraRadius * bx::sin(m_mousex * 0.01f) * horizonRadius,
-			cameraRadius * bx::sin(m_mousey * 0.01f),
-			cameraRadius * bx::cos(m_mousex * 0.01f) * horizonRadius
+		bx::Vec3 eye = {
+			cameraRadius* bx::sin(m_mousex * 0.01f)* horizonRadius,
+			cameraRadius* bx::sin(m_mousey * 0.01f),
+			cameraRadius* bx::cos(m_mousex * 0.01f)* horizonRadius
 		};
-		const bx::Vec3 eye = {
-			eyePos[0],eyePos[1],eyePos[2]
-		};
+		// 相机方向
+		eye = bx::add(eye, m_cameraOffset);
+		m_cameraForward = bx::sub(at,eye);
+		m_cameraRight = bx::cross(m_cameraForward, bx::Vec3{0,1,0});
 
 		// Set view and projection matrix for view 0.
 		float view[16];

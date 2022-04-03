@@ -21,6 +21,11 @@ private:
 	uint32_t m_debug;
 	uint32_t m_reset;
 	
+	// 相机
+	bx::Vec3 m_cameraForward = { 0,0,0 };
+	bx::Vec3 m_cameraRight = { 0,0,0 };
+	bx::Vec3 m_cameraOffset = { 0,0,0 };
+
 	// 模型
 	Mesh* m_mesh;
 
@@ -38,7 +43,7 @@ private:
 	int64_t m_timeOffset;
 
 	// 输入相关
-	entry::MouseState m_mouseState;
+	entry::MouseState m_mouseState;		
 	float m_mousex = 0.0f;
 	float m_mousey = 0.0f;
 
