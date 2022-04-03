@@ -41,6 +41,12 @@ private:
 	bgfx::ProgramHandle m_program;
 
 	int64_t m_timeOffset;
+	float m_ka = 0.2f;
+	float m_kd = 0.6f;
+	float m_ks = 0.2f;
+	float m_p = 8;
+	float m_lightIntensity[4] = {0.2f,0.5f,0.2f};
+	float m_ambientIntensity[4] = {0.6f,0.2f,0.1f};
 
 	//  ‰»Îœ‡πÿ
 	entry::MouseState m_mouseState;		

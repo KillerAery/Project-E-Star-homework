@@ -110,18 +110,26 @@ bool Level2::update()
 		showExampleDialog(this);
 
 		ImGui::SetNextWindowPos(
-			ImVec2(m_width - m_width / 5.0f - 10.0f, 10.0f)
+			ImVec2(m_width - m_width / 4.0f - 10.0f, 10.0f)
 			, ImGuiCond_FirstUseEver
 		);
 		ImGui::SetNextWindowSize(
-			ImVec2(m_width / 5.0f, m_height / 3.5f)
+			ImVec2(m_width / 4.0f, 0)
 			, ImGuiCond_FirstUseEver
 		);
 		ImGui::Begin("Settings"
 			, NULL
 			, 0
 		);
-
+		ImGui::PushItemWidth(180.0f);
+		ImGui::Text("blinn-phong property:");
+		ImGui::Indent();
+		ImGui::SliderFloat("ambient k", &m_ka, 0.0f, 1.0f);
+		ImGui::SliderFloat("diffuse k", &m_kd, 0.0f, 1.0f);
+		ImGui::SliderFloat("specular k", &m_ks, 0.0f, 1.0f);
+		ImGui::SliderFloat("specular pow", &m_p, 1.0f, 64.0f);
+		ImGui::ColorWheel("ambient color", m_ambientIntensity, 10.0f);
+		ImGui::ColorWheel("light color", m_lightIntensity,10.0f);
 
 		ImGui::End();
 
@@ -149,18 +157,10 @@ bool Level2::update()
 		// WASD平移镜头
 		float keyForward = 0.0f;
 		float keyLeft = 0.0f;
-		if (inputGetKeyState(entry::Key::KeyW)) {
-			keyForward += 1.0f;
-		}		
-		if (inputGetKeyState(entry::Key::KeyS)) {
-			keyForward -= 1.0f;
-		}
-		if (inputGetKeyState(entry::Key::KeyA)) {
-			keyLeft += 1.0f;
-		}
-		if (inputGetKeyState(entry::Key::KeyD)) {
-			keyLeft -= 1.0f;
-		}
+		if (inputGetKeyState(entry::Key::KeyW))keyForward += 1.0f;
+		if (inputGetKeyState(entry::Key::KeyS))keyForward -= 1.0f;
+		if (inputGetKeyState(entry::Key::KeyA))keyLeft += 1.0f;
+		if (inputGetKeyState(entry::Key::KeyD))keyLeft -= 1.0f;
 
 		// ---------------------------------- Logic Events
 		//
@@ -197,16 +197,21 @@ bool Level2::update()
 		bgfx::setViewTransform(0, view, proj);
 		
 		// 系数相关
-		float k[4] = { 0.2f,0.6f,0.2f,6.0f};
+		float k[4] = {m_ka,m_kd,m_ks,m_p};
 		bgfx::setUniform(u_k, k);
 
 		// 灯光相关
-		float ambientIntensity[4] = { 2.0f,10.0f,5.0f,0.0f };
+		float ambientIntensity[4];
+		float lightIntensity[4];
+		// 加强光照颜色
+		for (int i = 0; i < 4; ++i){
+			ambientIntensity[i] = m_ambientIntensity[i] * 10.0f;
+			lightIntensity[i] = m_lightIntensity[i] * 20.0f;
+		}
 		bgfx::setUniform(u_ambientIntensity,ambientIntensity);
-		float lightPos[4] ={bx::sin(time) * 3.0f,5.0f,bx::cos(time) * 3.0f,0.0f};
-		bgfx::setUniform(u_lightPos, lightPos);
-		float lightIntensity[4] ={100.0f, 100.0f, 100.0f,0.0f};
 		bgfx::setUniform(u_lightIntensity, lightIntensity);
+		float lightPos[4] = { bx::sin(time) * 3.0f,5.0f,bx::cos(time) * 3.0f,0.0f };
+		bgfx::setUniform(u_lightPos, lightPos);
 
 		// Submit 1 cubes.
 		float mtx[16];
