@@ -1,12 +1,12 @@
-#include "Level2.h"
+#include "Level3.h"
 #include <bx/uint32_t.h>
 #include "bgfx_logo.h"
 #include "imgui/imgui.h"
 #include <entry/input.h>
 
-bgfx::VertexLayout Level2::PosNormalTexcoordVertex::ms_layout = {};
+bgfx::VertexLayout Level3::PosNormalTexcoordVertex::ms_layout = {};
 
-Level2::Level2(const char* _name, const char* _description, const char* _url)
+Level3::Level3(const char* _name, const char* _description, const char* _url)
 	: entry::AppI(_name, _description, _url)
 {
 	m_width = 0;
@@ -15,7 +15,7 @@ Level2::Level2(const char* _name, const char* _description, const char* _url)
 	m_reset = BGFX_RESET_NONE;
 }
 
-void Level2::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint32_t _height)
+void Level3::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint32_t _height)
 {
 	Args args(_argc, _argv);
 
@@ -67,7 +67,7 @@ void Level2::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint
 	imguiCreate();
 }
 
-int Level2::shutdown()
+int Level3::shutdown()
 {
 	imguiDestroy();
 
@@ -87,7 +87,7 @@ int Level2::shutdown()
 	return 0;
 }
 
-bool Level2::update()
+bool Level3::update()
 {
 	if (!entry::processEvents(m_width, m_height, m_debug, m_reset, &m_mouseState))
 	{
