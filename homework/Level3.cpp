@@ -4,7 +4,7 @@
 #include "imgui/imgui.h"
 #include <entry/input.h>
 
-bgfx::VertexLayout Level3::PosNormalTexcoordVertex::ms_layout = {};
+bgfx::VertexLayout Level3::PosTBNTexcoord3Vertex::ms_layout = {};
 
 Level3::Level3(const char* _name, const char* _description, const char* _url)
 	: entry::AppI(_name, _description, _url)
@@ -44,20 +44,26 @@ void Level3::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint
 	);
 
 	// Create vertex stream declaration.
-	PosNormalTexcoordVertex::init();
+	PosTBNTexcoord3Vertex::init();
 
 	// Create texture sampler uniforms.
-	s_texColor = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
-	u_k					= bgfx::createUniform("u_k", bgfx::UniformType::Vec4);
-	u_lightPos			= bgfx::createUniform("u_lightPos", bgfx::UniformType::Vec4);
-	u_ambientIntensity	= bgfx::createUniform("u_ambientIntensity", bgfx::UniformType::Vec4);
-	u_lightIntensity	= bgfx::createUniform("u_lightIntensity", bgfx::UniformType::Vec4);
+	s_texColor =	bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+	s_texNormal =	bgfx::createUniform("s_texNormal", bgfx::UniformType::Sampler);
+	s_texAorm =		bgfx::createUniform("s_texAorm", bgfx::UniformType::Sampler);
+	u_lightDir	=	bgfx::createUniform("u_lightDir", bgfx::UniformType::Vec4);
+	u_lightRadiance = bgfx::createUniform("u_lightRadiance", bgfx::UniformType::Vec4);
+	u_ambient = bgfx::createUniform("u_ambient", bgfx::UniformType::Vec4);
+	u_eyePos = bgfx::createUniform("u_eyePos", bgfx::UniformType::Vec4);
 
 	// Create program from shaders.
-	m_program = loadProgram("vs_cubes_blinnphong", "fs_cubes_blinnphong");
+	m_program = loadProgram("vs_cubes_PBR", "fs_cubes_PBR");
 
-	// Load diffuse texture.
-	m_textureColor = loadTexture("../resource/pbr_stone/pbr_stone_base_color.dds", BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP);
+	// Load albedo texture.
+	m_textureColor = loadTexture("../resource/pbr_stone/pbr_stone_base_color.dds");
+	// Load normal texture
+	m_textureNormal = loadTexture("../resource/pbr_stone/pbr_stone_normal.dds");
+	// Load arom texture
+	m_textureAorm = loadTexture("../resource/pbr_stone/pbr_stone_aorm.dds");
 
 
 	m_mesh = meshLoad("../resource/pbr_stone/pbr_stone_mes.bin");
@@ -75,10 +81,16 @@ int Level3::shutdown()
 	meshUnload(m_mesh);
 	bgfx::destroy(m_textureColor);
 	bgfx::destroy(s_texColor);
-	bgfx::destroy(u_k);
-	bgfx::destroy(u_lightPos);
-	bgfx::destroy(u_ambientIntensity);
-	bgfx::destroy(u_lightIntensity);
+	bgfx::destroy(m_textureNormal);
+	bgfx::destroy(s_texNormal);
+	bgfx::destroy(m_textureAorm);
+	bgfx::destroy(s_texAorm);
+
+	bgfx::destroy(u_lightDir);
+	bgfx::destroy(u_lightRadiance);
+	bgfx::destroy(u_ambient);
+	bgfx::destroy(u_eyePos);
+
 	bgfx::destroy(m_program);
 
 	// Shutdown bgfx.
@@ -122,14 +134,13 @@ bool Level3::update()
 			, 0
 		);
 		ImGui::PushItemWidth(180.0f);
-		ImGui::Text("blinn-phong property:");
+		ImGui::Text("PBR property:");
 		ImGui::Indent();
-		ImGui::SliderFloat("ambient k", &m_ka, 0.0f, 1.0f);
-		ImGui::SliderFloat("diffuse k", &m_kd, 0.0f, 1.0f);
-		ImGui::SliderFloat("specular k", &m_ks, 0.0f, 1.0f);
-		ImGui::SliderFloat("specular pow", &m_p, 1.0f, 64.0f);
-		ImGui::ColorWheel("ambient color", m_ambientIntensity, 10.0f);
-		ImGui::ColorWheel("light color", m_lightIntensity,10.0f);
+		ImGui::SliderFloat("lightDir x", &m_lightDir[0], -1.0f, 1.0f);
+		ImGui::SliderFloat("lightDir y", &m_lightDir[1], -1.0f, 1.0f);
+		ImGui::SliderFloat("lightDir z", &m_lightDir[2], -1.0f, 1.0f);
+		ImGui::ColorWheel("light radiance", m_lightRadiance, 1.0f);
+		ImGui::ColorWheel("ambient", m_ambient, 1.0f);
 
 		ImGui::End();
 
@@ -196,22 +207,16 @@ bool Level3::update()
 		bx::mtxProj(proj, 60.0f, float(m_width) / float(m_height), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
 		bgfx::setViewTransform(0, view, proj);
 		
-		// 系数相关
-		float k[4] = {m_ka,m_kd,m_ks,m_p};
-		bgfx::setUniform(u_k, k);
+		bgfx::setUniform(u_eyePos, &eye);
 
-		// 灯光相关
-		float ambientIntensity[4];
-		float lightIntensity[4];
-		// 加强光照颜色
-		for (int i = 0; i < 4; ++i){
-			ambientIntensity[i] = m_ambientIntensity[i] * 10.0f;
-			lightIntensity[i] = m_lightIntensity[i] * 20.0f;
-		}
-		bgfx::setUniform(u_ambientIntensity,ambientIntensity);
-		bgfx::setUniform(u_lightIntensity, lightIntensity);
-		float lightPos[4] = { bx::sin(time) * 3.0f,5.0f,bx::cos(time) * 3.0f,0.0f };
-		bgfx::setUniform(u_lightPos, lightPos);
+		// 灯光相关		
+		bx::Vec3 lightDir = {m_lightDir[0],m_lightDir[1],m_lightDir[2]};
+		lightDir = bx::normalize(lightDir);
+		float lightDir2Set[4] = { lightDir.x,lightDir.y,lightDir.z,0.0f };
+		bgfx::setUniform(u_lightDir, lightDir2Set);
+		float lightRadiance2Set[4] = { m_lightRadiance[0]*200000,m_lightRadiance[1] * 200000,m_lightRadiance[2] * 200000,1.0f};
+		bgfx::setUniform(u_lightRadiance, lightRadiance2Set);
+		bgfx::setUniform(u_ambient, m_ambient);
 
 		// Submit 1 cubes.
 		float mtx[16];
@@ -222,6 +227,8 @@ bool Level3::update()
 
 		// Bind textures.
 		bgfx::setTexture(0, s_texColor, m_textureColor);
+		bgfx::setTexture(1, s_texNormal, m_textureNormal);
+		bgfx::setTexture(2, s_texAorm, m_textureAorm);
 
 		// Set render states.
 		uint64_t state = 0

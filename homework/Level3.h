@@ -32,21 +32,22 @@ private:
 	// 绘制相关
 	bgfx::TextureHandle m_textureColor;
 	bgfx::UniformHandle s_texColor;
+	bgfx::TextureHandle m_textureNormal;
+	bgfx::UniformHandle s_texNormal;
+	bgfx::TextureHandle m_textureAorm;
+	bgfx::UniformHandle s_texAorm;
 
-	bgfx::UniformHandle u_k;
-	bgfx::UniformHandle u_lightPos;
-	bgfx::UniformHandle u_ambientIntensity;
-	bgfx::UniformHandle u_lightIntensity;
+	bgfx::UniformHandle u_eyePos;
+	bgfx::UniformHandle u_lightDir;
+	bgfx::UniformHandle u_lightRadiance;
+	bgfx::UniformHandle u_ambient;
 
 	bgfx::ProgramHandle m_program;
 
 	int64_t m_timeOffset;
-	float m_ka = 0.2f;
-	float m_kd = 0.6f;
-	float m_ks = 0.2f;
-	float m_p = 8;
-	float m_lightIntensity[4] = {0.2f,0.5f,0.2f};
-	float m_ambientIntensity[4] = {0.6f,0.2f,0.1f};
+	float m_lightDir[4] = { 0.0f,1.0f ,0.0f };
+	float m_lightRadiance[4] = { 0.2f,0.5f,0.2f };
+	float m_ambient[4] = { 0.4f,0.4f,0.4f };
 
 	// 输入相关
 	entry::MouseState m_mouseState;		
@@ -54,19 +55,27 @@ private:
 	float m_mousey = 0.0f;
 
 private:
-	struct PosNormalTexcoordVertex
+	struct PosTBNTexcoord3Vertex
 	{
 		float m_x;
 		float m_y;
 		float m_z;
+		float m_tx;
+		float m_ty;
+		float m_tz;
+		float m_nx;
+		float m_ny;
+		float m_nz;
 		int16_t m_u;
 		int16_t m_v;
+
 		static void init()
 		{
 			ms_layout
 				.begin()
 				.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-				.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
+				.add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
+				.add(bgfx::Attrib::Normal, 4, bgfx::AttribType::Float)
 				.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16, true, true)
 				.end();
 		};
