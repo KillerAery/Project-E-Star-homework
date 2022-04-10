@@ -40,13 +40,15 @@ private:
 	bgfx::UniformHandle u_eyePos;
 	bgfx::UniformHandle u_lightDir;
 	bgfx::UniformHandle u_lightRadiance;
+	bgfx::UniformHandle u_k;
 	bgfx::UniformHandle u_ambient;
 
 	bgfx::ProgramHandle m_program;
 
 	int64_t m_timeOffset;
-	float m_lightDir[4] = { 0.0f,1.0f ,0.0f };
-	float m_lightRadiance[4] = { 0.2f,0.5f,0.2f };
+	float m_lightDir[4] = { -0.5f,-0.5f ,0.5f };
+	float m_lightRadiance[4] = { 0.8f,0.8f,0.8f };
+	float m_k[4] = {0.1f,0.9f};
 	float m_ambient[4] = { 0.4f,0.4f,0.4f };
 
 	//  ‰»Îœ‡πÿ

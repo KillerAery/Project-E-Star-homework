@@ -52,8 +52,9 @@ void Level3::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint
 	s_texAorm =		bgfx::createUniform("s_texAorm", bgfx::UniformType::Sampler);
 	u_lightDir	=	bgfx::createUniform("u_lightDir", bgfx::UniformType::Vec4);
 	u_lightRadiance = bgfx::createUniform("u_lightRadiance", bgfx::UniformType::Vec4);
-	u_ambient = bgfx::createUniform("u_ambient", bgfx::UniformType::Vec4);
 	u_eyePos = bgfx::createUniform("u_eyePos", bgfx::UniformType::Vec4);
+	u_k = bgfx::createUniform("u_k", bgfx::UniformType::Vec4);
+	u_ambient = bgfx::createUniform("u_ambient", bgfx::UniformType::Vec4);
 
 	// Create program from shaders.
 	m_program = loadProgram("vs_cubes_PBR", "fs_cubes_PBR");
@@ -88,8 +89,9 @@ int Level3::shutdown()
 
 	bgfx::destroy(u_lightDir);
 	bgfx::destroy(u_lightRadiance);
-	bgfx::destroy(u_ambient);
 	bgfx::destroy(u_eyePos);
+	bgfx::destroy(u_k);
+	bgfx::destroy(u_ambient);
 
 	bgfx::destroy(m_program);
 
@@ -139,7 +141,9 @@ bool Level3::update()
 		ImGui::SliderFloat("lightDir x", &m_lightDir[0], -1.0f, 1.0f);
 		ImGui::SliderFloat("lightDir y", &m_lightDir[1], -1.0f, 1.0f);
 		ImGui::SliderFloat("lightDir z", &m_lightDir[2], -1.0f, 1.0f);
-		ImGui::ColorWheel("light radiance", m_lightRadiance, 1.0f);
+		ImGui::SliderFloat("k_diffuse", &m_k[0], 0.0f, 1.0f);
+		ImGui::SliderFloat("k_specular", &m_k[1], 0.0f, 1.0f);
+		ImGui::ColorWheel("directional light", m_lightRadiance, 1.0f);
 		ImGui::ColorWheel("ambient", m_ambient, 1.0f);
 
 		ImGui::End();
@@ -214,8 +218,9 @@ bool Level3::update()
 		lightDir = bx::normalize(lightDir);
 		float lightDir2Set[4] = { lightDir.x,lightDir.y,lightDir.z,0.0f };
 		bgfx::setUniform(u_lightDir, lightDir2Set);
-		float lightRadiance2Set[4] = { m_lightRadiance[0]*200000,m_lightRadiance[1] * 200000,m_lightRadiance[2] * 200000,1.0f};
+		float lightRadiance2Set[4] = { m_lightRadiance[0]*2000,m_lightRadiance[1] * 2000,m_lightRadiance[2] * 2000,1.0f};
 		bgfx::setUniform(u_lightRadiance, lightRadiance2Set);
+		bgfx::setUniform(u_k, m_k);
 		bgfx::setUniform(u_ambient, m_ambient);
 
 		// Submit 1 cubes.
