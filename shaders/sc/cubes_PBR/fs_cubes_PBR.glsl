@@ -58,7 +58,7 @@ void main()
 	normal.z = sqrt(1.0-dot(normal.xy,normal.xy));
 	// 世界空间下的 texture normal
 	mat3 tbn = mtxFromCols(normalize(v_tangent), normalize(v_bitangent), normalize(v_normal));
-	normal = mul(normal, tbn);
+	normal = mul(tbn, normal);
 	normal = normalize(normal);
   	// ambient occlusion & roughness & metallic
   	vec3 aorm = texture2D(s_texAorm, v_texcoord0).rgb;
@@ -88,12 +88,12 @@ void main()
 	// diffuse BRDF
 	vec3 diffuse = max(albedo / PI, 0.0001);
 	// ambient
-	vec3 ambient = albedo * u_ambient.xyz * ao;
+	vec3 ambient = albedo * u_ambient.xyz;
 	// Lo
 	float kd = u_k.x * (1.0-metallic);
 	float ks = u_k.y;
   	vec3 radiance = u_lightRadiance.xyz;
-  	vec3 Lo = (ks * specular + kd * diffuse) * radiance * NdotL + ambient;
+  	vec3 Lo = (ks * specular + kd * diffuse) * radiance * NdotL + ambient * ao;
 	// FragColor
   	vec3 color = Lo;
   	color = color / (color + vec3(1.0,1.0,1.0));

@@ -11,9 +11,9 @@ void main()
 
 	// v_tangent v_normal v_bitangent
 	vec3 normal = a_normal.xyz;
-	vec3 tangent = cross(normal,vec3(0.0,1.0,0.0));
+	vec3 tangent = cross(normal,normalize(vec3(0.0,1.0,1.0)));
 	if(dot(tangent,tangent)<0.1){
-		tangent = cross(normal,vec3(1.0,0.0,0.0));
+		tangent = cross(normal,normalize(vec3(1.0,1.0,0.0)));
 	}
 	vec3 wnormal = mul(u_model[0], vec4(normal, 0.0) ).xyz;
 	vec3 wtangent = mul(u_model[0], vec4(tangent, 0.0) ).xyz;

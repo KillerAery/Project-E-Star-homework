@@ -47,9 +47,9 @@ private:
 
 	int64_t m_timeOffset;
 	float m_lightDir[4] = { -0.5f,-0.5f ,0.5f };
-	float m_lightRadiance[4] = { 0.8f,0.8f,0.8f };
+	float m_lightRadiance[4] = { 0.9f,0.3f,0.3f };
 	float m_k[4] = {0.1f,0.9f};
-	float m_ambient[4] = { 0.4f,0.4f,0.4f };
+	float m_ambient[4] = { 0.3f,0.3f,0.3f };
 
 	//  ‰»Îœ‡πÿ
 	entry::MouseState m_mouseState;		
