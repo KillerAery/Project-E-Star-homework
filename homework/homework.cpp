@@ -5,12 +5,14 @@
 #include "Level1.h"
 #include "Level2.h"
 #include "Level3.h"
+#include "Level4.h"
 
 int _main_(int _argc, char** _argv)
 {
 	//Level1 app("e-star-homework", "", "");
 	//Level2 app("e-star-homework", "", "");
-	Level3 app("e-star-homework", "", "");
+	//Level3 app("e-star-homework", "", "");
+	Level4 app("e-star-homework", "", "");
 	return entry::runApp(&app, _argc, _argv);
 }
 
