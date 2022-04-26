@@ -18,17 +18,17 @@ public:
 
 	bool update() override;
 
+	// 更新 UI
+	void updateImgui();
+
+	// 更新输入
+	void updateInput();
+
 	// 绘制 PBR_Stone：使用IBL shader
 	void drawPBRStone();
 
 	// 绘制 Skybox：使用 skybox shader
 	void drawSkybox();
-
-	void screenSpaceQuad(
-		float _textureWidth, float _textureHeight, bool _originBottomLeft = false,
-		float _width = 1.0f, float _height = 1.0f
-	);
-
 private:
 	uint32_t m_width;
 	uint32_t m_height;
@@ -107,4 +107,10 @@ private:
 		};
 		static bgfx::VertexLayout ms_layout;
 	};
+private:
+	// 装配屏幕空间quad顶点
+	void screenSpaceQuad(
+		float _textureWidth, float _textureHeight, bool _originBottomLeft = false,
+		float _width = 1.0f, float _height = 1.0f
+	);
 };
