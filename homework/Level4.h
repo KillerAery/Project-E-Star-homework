@@ -15,6 +15,11 @@ public:
 
 	bool update() override;
 
+	void screenSpaceQuad(
+		float _textureWidth, float _textureHeight, bool _originBottomLeft = false, 
+		float _width = 1.0f, float _height = 1.0f
+	);
+
 private:
 	uint32_t m_width;
 	uint32_t m_height;
@@ -47,7 +52,8 @@ private:
 	bgfx::UniformHandle u_k;
 	bgfx::UniformHandle u_mtx;
 
-	bgfx::ProgramHandle m_program;
+	bgfx::ProgramHandle m_programIBL;
+	bgfx::ProgramHandle m_programSkybox;
 
 	LightProbe m_lightProbe;
 
@@ -55,25 +61,21 @@ private:
 	float m_lightDir[4] = { -0.5f,-0.5f ,0.5f };
 	float m_lightRadiance[4] = { 0.8f,0.8f,0.8f };
 	float m_k[4] = {0.1f,0.9f};
+	float m_mtx[16] = { 0.0f };
+	float m_envRotCurr = 0.0f;
+	float m_envRotDest = 0.0f;
 
 	//  ‰»Îœ‡πÿ
 	entry::MouseState m_mouseState;		
 	float m_mousex = 0.0f;
 	float m_mousey = 0.0f;
 private:
-	struct PosTBNTexcoord3Vertex
+	struct PosTangentNormalTexcoordVertex
 	{
-		float m_x;
-		float m_y;
-		float m_z;
-		float m_tx;
-		float m_ty;
-		float m_tz;
-		float m_nx;
-		float m_ny;
-		float m_nz;
-		int16_t m_u;
-		int16_t m_v;
+		float m_x, m_y, m_z;
+		float m_tx, m_ty, m_tz;
+		float m_nx, m_ny, m_nz;
+		float m_u, m_v;
 
 		static void init()
 		{
@@ -82,7 +84,22 @@ private:
 				.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
 				.add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
 				.add(bgfx::Attrib::Normal, 4, bgfx::AttribType::Float)
-				.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16, true, true)
+				.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+				.end();
+		};
+		static bgfx::VertexLayout ms_layout;
+	};	
+	struct PosTexcoordVertex
+	{
+		float m_x, m_y, m_z;
+		float m_u, m_v;
+
+		static void init()
+		{
+			ms_layout
+				.begin()
+				.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+				.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
 				.end();
 		};
 		static bgfx::VertexLayout ms_layout;
