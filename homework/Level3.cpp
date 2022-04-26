@@ -1,8 +1,7 @@
 #include "Level3.h"
 #include <bx/uint32_t.h>
-#include "bgfx_logo.h"
-#include "imgui/imgui.h"
 #include <entry/input.h>
+#include "imgui/imgui.h"
 
 bgfx::VertexLayout Level3::PosTBNTexcoord3Vertex::ms_layout = {};
 

@@ -1,9 +1,8 @@
 #include "Level4.h"
-#include <bx/uint32_t.h>
 #include <iostream>
-#include "bgfx_logo.h"
-#include "imgui/imgui.h"
+#include <bx/uint32_t.h>
 #include <entry/input.h>
+#include "imgui/imgui.h"
 
 bgfx::VertexLayout Level4::PosTangentNormalTexcoordVertex::ms_layout = {};
 bgfx::VertexLayout Level4::PosTexcoordVertex::ms_layout = {};
@@ -183,7 +182,6 @@ bool Level4::update()
 			m_mousex += ImGui::GetIO().MouseDelta.x;
 			m_mousey += ImGui::GetIO().MouseDelta.y;
 		}
-		//m_mousex = bx::clamp(m_mousex,-90.0f ,90.0f );
 		m_mousey = bx::clamp(m_mousey, -90.0f, 90.0f);
 		// 滚轮缩放镜头
 		float mouseScroll = 1.0f + 0.05f * m_mouseState.m_mz;
@@ -195,99 +193,95 @@ bool Level4::update()
 		if (inputGetKeyState(entry::Key::KeyA))keyLeft += 1.0f;
 		if (inputGetKeyState(entry::Key::KeyD))keyLeft -= 1.0f;
 
+		// 相机
+		m_camera.changeRadiusScale(bx::max(mouseScroll, 0.1f));		// 相机环绕目标距离
+		m_camera.moveCamera(keyLeft * 0.01f, keyForward * 0.01f);	// 相机移动
+		m_camera.rotateCamera(m_mousex * 0.01f, m_mousey * 0.01f);	// 相机旋转
+		m_camera.updateView();										// 更新view变换
+
 		// ---------------------------------- Draw Events
-		//
+		
+		drawPBRStone();
+		drawSkybox();
 
-		// 相机相关
-		m_cameraOffset = bx::add(m_cameraOffset,
-			bx::add(bx::mul(m_cameraRight, keyLeft * 0.01f),
-				bx::mul(m_cameraForward, keyForward * 0.01f))
-		);
-		// 相机目标
-		const bx::Vec3 at = m_cameraOffset;
-
-		// 相机位置
-		float cameraRadius = 35.0f;
-		cameraRadius *= mouseScroll;
-		float horizonRadius = bx::cos(m_mousey * 0.01f);
-		bx::Vec3 eye = {
-			cameraRadius* bx::sin(m_mousex * 0.01f)* horizonRadius,
-			cameraRadius* bx::sin(m_mousey * 0.01f),
-			cameraRadius* bx::cos(m_mousex * 0.01f)* horizonRadius
-		};
-		eye = bx::add(eye, m_cameraOffset);
-		bgfx::setUniform(u_eyePos, &eye);
-
-		// 相机方向
-		m_cameraForward = bx::sub(at,eye);
-		m_cameraRight = bx::cross(m_cameraForward, bx::Vec3{0,1,0});
-		float view[16];
-		float proj[16];
-
-		bx::mtxIdentity(view);
-		bx::mtxLookAt(view, eye, at);
-		bx::mtxProj(proj, 60.0f, float(m_width) / float(m_height), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
-		bgfx::setViewTransform(0, view, proj);
-
-		// 灯光相关		
-		bx::Vec3 lightDir = {m_lightDir[0],m_lightDir[1],m_lightDir[2]};
-		lightDir = bx::normalize(lightDir);
-		float lightDir2Set[4] = { lightDir.x,lightDir.y,lightDir.z,0.0f };
-		bgfx::setUniform(u_lightDir, lightDir2Set);
-		float lightRadiance2Set[4] = { m_lightRadiance[0]*2000,m_lightRadiance[1] * 2000,m_lightRadiance[2] * 2000,1.0f};
-		bgfx::setUniform(u_lightRadiance, lightRadiance2Set);
-		bgfx::setUniform(u_k, m_k);
-
-		// Env rotation.
-		float view_inv[16];
-		bx::mtxInverse(view_inv, view);
-		bgfx::setUniform(u_mtx, view_inv);
-
-		// Bind textures.
-		bgfx::setTexture(0, s_texColor, m_textureColor);
-		bgfx::setTexture(1, s_texNormal, m_textureNormal);
-		bgfx::setTexture(2, s_texAorm, m_textureAorm);
-		bgfx::setTexture(3, s_texCube, m_lightProbe.m_tex);
-		bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.m_texIrr);
-		bgfx::setTexture(5, s_texLUT, m_texLUT);
-
-		// Set render states.
-		bgfx::setState(
-			BGFX_STATE_WRITE_RGB
-			| BGFX_STATE_WRITE_A
-			| BGFX_STATE_WRITE_Z
-			| BGFX_STATE_DEPTH_TEST_LESS
-			| BGFX_STATE_CULL_CW
-			| BGFX_STATE_MSAA
-		);
-
-		// draw PBR_Stone(IBL shader)
-		float modelMatrix[16];
-		bx::mtxSRT(modelMatrix, 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.80f, 0.0f);
-		meshSubmit(m_mesh,0, m_programIBL, modelMatrix);
-
-		// draw Skybox（skybox shader）
-		bgfx::setUniform(u_mtx, view_inv);
-
-		bx::mtxIdentity(view);
-		bx::mtxOrtho(proj, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 100.0f, 0.0, bgfx::getCaps()->homogeneousDepth);
-		bgfx::setViewTransform(1, view, proj);
-		bgfx::setTexture(0, s_texCube, m_lightProbe.m_tex);
-		bgfx::setState(
-			BGFX_STATE_WRITE_RGB
-			| BGFX_STATE_DEPTH_TEST_EQUAL
-		);
-		screenSpaceQuad((float)m_width, (float)m_height, true);
-		bgfx::submit(1, m_programSkybox);
-
-		// Advance to next frame. Rendering thread will be kicked to
-		// process submitted rendering primitives.
 		bgfx::frame();
-
 		return true;
 	}
 
 	return false;
+}
+
+void Level4::drawPBRStone()
+{
+	// View
+	float* view = m_camera.view;
+	// proj
+	m_camera.updateProj(true, m_width, m_height);	// 更新proj变换（投影变换）
+	float* proj = m_camera.proj;
+	bgfx::setViewTransform(0, view, proj);			// 设置view、proj
+	bgfx::setUniform(u_eyePos, &m_camera.pos);		// 设置相机位置
+	// 环境光旋转
+	bgfx::setUniform(u_mtx, m_camera.view_inv);
+
+	// 灯光相关		
+	bx::Vec3 lightDir = { m_lightDir[0],m_lightDir[1],m_lightDir[2] };
+	lightDir = bx::normalize(lightDir);
+	float lightDir2Set[4] = { lightDir.x,lightDir.y,lightDir.z,0.0f };
+	bgfx::setUniform(u_lightDir, lightDir2Set);
+	float lightRadiance2Set[4] = { m_lightRadiance[0] * 2000,m_lightRadiance[1] * 2000,m_lightRadiance[2] * 2000,1.0f };
+	bgfx::setUniform(u_lightRadiance, lightRadiance2Set);
+	bgfx::setUniform(u_k, m_k);
+
+	// 绑定纹理
+	bgfx::setTexture(0, s_texColor, m_textureColor);
+	bgfx::setTexture(1, s_texNormal, m_textureNormal);
+	bgfx::setTexture(2, s_texAorm, m_textureAorm);
+	bgfx::setTexture(3, s_texCube, m_lightProbe.texLOD);
+	bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.texIrr);
+	bgfx::setTexture(5, s_texLUT, m_texLUT);
+
+	// 设置渲染状态
+	bgfx::setState(
+		BGFX_STATE_WRITE_RGB
+		| BGFX_STATE_WRITE_A
+		| BGFX_STATE_WRITE_Z
+		| BGFX_STATE_DEPTH_TEST_LESS
+		| BGFX_STATE_CULL_CW
+		| BGFX_STATE_MSAA
+	);
+	// model 变换
+	float modelMatrix[16];
+	bx::mtxSRT(modelMatrix, 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.80f, 0.0f);
+	// 提交渲染命令
+	meshSubmit(m_mesh, 0, m_programIBL, modelMatrix);
+
+}
+
+void Level4::drawSkybox()
+{
+	// View
+	float view_identity[16];
+	bx::mtxIdentity(view_identity);
+	// Proj
+	m_camera.updateProj(false);			// 正交投影
+	float* proj = m_camera.proj;
+	bgfx::setViewTransform(1, view_identity, proj);
+	// 环境光旋转
+	bgfx::setUniform(u_mtx, m_camera.view_inv);
+
+	// 绑定纹理
+	bgfx::setTexture(0, s_texCube, m_lightProbe.texLOD);
+
+	// 设置渲染状态
+	bgfx::setState(
+		BGFX_STATE_WRITE_RGB
+		| BGFX_STATE_DEPTH_TEST_EQUAL
+	);
+
+	// 装配屏幕空间quad顶点
+	screenSpaceQuad((float)m_width, (float)m_height, true);
+	// 提交渲染命令
+	bgfx::submit(1, m_programSkybox);
 }
 
 void Level4::screenSpaceQuad(float _textureWidth, float _textureHeight, bool _originBottomLeft, float _width, float _height)

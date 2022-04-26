@@ -2,7 +2,10 @@
 
 #include "common.h"
 #include "bgfx_utils.h"
-#include "LightProbe.h"
+#include "HomeworkCommon/LightProbe.h"
+#include "HomeworkCommon/Camera.h"
+
+using namespace Aery;
 
 class Level4 : public entry::AppI {
 
@@ -15,8 +18,14 @@ public:
 
 	bool update() override;
 
+	// 绘制 PBR_Stone：使用IBL shader
+	void drawPBRStone();
+
+	// 绘制 Skybox：使用 skybox shader
+	void drawSkybox();
+
 	void screenSpaceQuad(
-		float _textureWidth, float _textureHeight, bool _originBottomLeft = false, 
+		float _textureWidth, float _textureHeight, bool _originBottomLeft = false,
 		float _width = 1.0f, float _height = 1.0f
 	);
 
@@ -25,14 +34,10 @@ private:
 	uint32_t m_height;
 	uint32_t m_debug;
 	uint32_t m_reset;
-	
-	// 相机
-	bx::Vec3 m_cameraForward = { 0,0,0 };
-	bx::Vec3 m_cameraRight = { 0,0,0 };
-	bx::Vec3 m_cameraOffset = { 0,0,0 };
 
-	// 模型
-	Mesh* m_mesh;
+	Camera m_camera;	// 相机
+	Mesh* m_mesh;		// 模型
+	LightProbe m_lightProbe;	// 环境光probe
 
 	// 绘制相关
 	bgfx::TextureHandle m_textureColor;
@@ -54,8 +59,6 @@ private:
 
 	bgfx::ProgramHandle m_programIBL;
 	bgfx::ProgramHandle m_programSkybox;
-
-	LightProbe m_lightProbe;
 
 	int64_t m_timeOffset;
 	float m_lightDir[4] = { -0.5f,-0.5f ,0.5f };

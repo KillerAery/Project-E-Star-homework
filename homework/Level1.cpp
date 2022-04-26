@@ -1,6 +1,5 @@
 #include "Level1.h"
 #include <bx/uint32_t.h>
-#include "bgfx_logo.h"
 #include "imgui/imgui.h"
 
 bgfx::VertexLayout Level1::PosColorVertex::ms_layout = {};
