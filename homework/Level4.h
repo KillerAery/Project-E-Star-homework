@@ -59,8 +59,8 @@ private:
 
 	int64_t m_timeOffset;
 	float m_lightDir[4] = { -0.5f,-0.5f ,0.5f };
-	float m_lightRadiance[4] = { 0.8f,0.8f,0.8f };
-	float m_k[4] = {0.1f,0.9f};
+	float m_lightRadiance[4] = { 0.0f,0.0f,0.0f };
+	float m_k[4] = {0.6f,0.4f};
 	float m_mtx[16] = { 0.0f };
 	float m_envRotCurr = 0.0f;
 	float m_envRotDest = 0.0f;

@@ -239,15 +239,9 @@ bool Level4::update()
 		bgfx::setUniform(u_k, m_k);
 
 		// Env rotation.
-		m_envRotDest += 0.01f;
-		m_envRotCurr = bx::lerp(m_envRotCurr, m_envRotDest, 0.1f);
-		float mtxEnvRot[16];
-		bx::mtxRotateY(mtxEnvRot, m_envRotCurr);
-		//float mtxTranslate[16];
-		//bx::mtxTranslate(mtxTranslate, -eye.x,-eye.y,-eye.z);
-		//bx::mtxMul(m_mtx, view, mtxTranslate);
-		//bx::mtxMul(m_mtx, view, mtxEnvRot); // Used for Skybox.
-		bgfx::setUniform(u_mtx, mtxEnvRot);
+		float view_inv[16];
+		bx::mtxInverse(view_inv, view);
+		bgfx::setUniform(u_mtx, view_inv);
 
 		// Bind textures.
 		bgfx::setTexture(0, s_texColor, m_textureColor);
@@ -273,10 +267,11 @@ bool Level4::update()
 		meshSubmit(m_mesh,0, m_programIBL, modelMatrix);
 
 		// draw Skybox£¨skybox shader£©
+		bgfx::setUniform(u_mtx, view_inv);
+
 		bx::mtxIdentity(view);
 		bx::mtxOrtho(proj, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 100.0f, 0.0, bgfx::getCaps()->homogeneousDepth);
 		bgfx::setViewTransform(1, view, proj);
-		bgfx::setUniform(u_mtx, mtxEnvRot);
 		bgfx::setTexture(0, s_texCube, m_lightProbe.m_tex);
 		bgfx::setState(
 			BGFX_STATE_WRITE_RGB
