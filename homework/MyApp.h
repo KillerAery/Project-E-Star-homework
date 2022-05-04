@@ -39,6 +39,7 @@ public:
 	// ¸üÐÂµÆ¹â
 	void updateLight();
 
+	void draw(Aery::IMesh& mesh, Aery::IMaterial& material, float* model);
 private:
 	uint32_t m_width;
 	uint32_t m_height;

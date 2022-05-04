@@ -188,45 +188,23 @@ bool MyApp::update()
 		m_shadowMaterial.drawMesh(m_pbrMesh, modelMatrix[1]);
 	}
 
-	// Main
-	bgfx::setTexture(0, s_texColor, m_pbrMesh.getTexColor());
-	bgfx::setTexture(1, s_texNormal, m_pbrMesh.getTexNormal());
-	bgfx::setTexture(2, s_texAorm, m_pbrMesh.getTexAorm());
-	bgfx::setTexture(3, s_texCube, m_lightProbe.getTexLOD());
-	//bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.getTexIrr());
-	bgfx::setTexture(5, s_texLUT, m_IBLMaterial.getTexLUT());
-	bgfx::setTexture(6, s_shadowmap, m_shadowMaterial.getShadowmap());
-
-	bgfx::setViewTransform(0, m_camera.view, m_camera.proj);// 设置 view、proj
-	bgfx::setUniform(u_mtx, m_camera.view_inv);
-
-	bgfx::setUniform(u_eyePos, &m_camera.pos);				// 设置 相机位置
-
-	bgfx::setUniform(u_lightDir, &m_light.direction);		// 设置 light direction
-	bgfx::setUniform(u_lightRadiance, m_light.radiance);	// 设置 light radiance
-	bgfx::setUniform(u_lightMtx, m_light.lightMtx);			// 设置 light mtx
-
-	bgfx::setUniform(u_k, m_k);								// 设置 diffuse、specular、ambient 系数
-	bgfx::setUniform(u_ambient, m_ambient);					// 设置 ambient
-
 	if (m_meshSelection == 0) {
 		bgfx::setVertexBuffer(0, m_vbh);
 		bgfx::setIndexBuffer(m_ibh);
-		m_baseMaterial.setState();
-		m_baseMaterial.drawMesh(m_cubeMesh, modelMatrix[2]);
+		draw(m_cubeMesh, m_baseMaterial,modelMatrix[2]);
 	}
 	else if (m_meshSelection == 1) {
 		if (m_materialSelection == 1) {
-			m_blinnPhongMaterial.setState();
-			m_blinnPhongMaterial.drawMesh(m_pbrMesh, modelMatrix[0]);
+			draw(m_pbrMesh, m_blinnPhongMaterial, modelMatrix[0]);
+			draw(m_pbrMesh, m_blinnPhongMaterial, modelMatrix[1]);
 		}
 		else if (m_materialSelection == 2) {
-			m_PBRMaterial.setState();
-			m_PBRMaterial.drawMesh(m_pbrMesh, modelMatrix[0]);
+			draw(m_pbrMesh, m_PBRMaterial, modelMatrix[0]);
+			draw(m_pbrMesh, m_PBRMaterial, modelMatrix[1]);
 		}
 		else if(m_materialSelection == 3) {
-			m_IBLMaterial.setState();
-			m_IBLMaterial.drawMesh(m_pbrMesh, modelMatrix[0]);
+			draw(m_pbrMesh, m_IBLMaterial, modelMatrix[0]);
+			draw(m_pbrMesh, m_IBLMaterial, modelMatrix[1]);
 		}
 	}
 
@@ -389,4 +367,31 @@ void MyApp::updateLight()
 	m_light.updateProj();
 	m_light.updateView();
 	m_light.updateLightMtx();
+}
+
+void MyApp::draw(Aery::IMesh& mesh, Aery::IMaterial& material, float* model)
+{	
+	// Main
+	bgfx::setTexture(0, s_texColor, m_pbrMesh.getTexColor());
+	bgfx::setTexture(1, s_texNormal, m_pbrMesh.getTexNormal());
+	bgfx::setTexture(2, s_texAorm, m_pbrMesh.getTexAorm());
+	bgfx::setTexture(3, s_texCube, m_lightProbe.getTexLOD());
+	//bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.getTexIrr());
+	bgfx::setTexture(5, s_texLUT, m_IBLMaterial.getTexLUT());
+	bgfx::setTexture(6, s_shadowmap, m_shadowMaterial.getShadowmap());
+
+	bgfx::setViewTransform(0, m_camera.view, m_camera.proj);// 设置 view、proj
+	bgfx::setUniform(u_mtx, m_camera.view_inv);
+
+	bgfx::setUniform(u_eyePos, &m_camera.pos);				// 设置 相机位置
+
+	bgfx::setUniform(u_lightDir, &m_light.direction);		// 设置 light direction
+	bgfx::setUniform(u_lightRadiance, m_light.radiance);	// 设置 light radiance
+	bgfx::setUniform(u_lightMtx, m_light.lightMtx);			// 设置 light mtx
+
+	bgfx::setUniform(u_k, m_k);								// 设置 diffuse、specular、ambient 系数
+	bgfx::setUniform(u_ambient, m_ambient);					// 设置 ambient
+
+	material.setState();
+	material.drawMesh(mesh, model);
 }
