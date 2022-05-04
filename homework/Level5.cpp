@@ -5,7 +5,6 @@
 #include "imgui/imgui.h"
 
 bgfx::VertexLayout Level5::PosTangentNormalTexcoordVertex::ms_layout = {};
-bgfx::VertexLayout Level5::PosVertex::ms_layout = {};
 
 Level5::Level5(const char* _name, const char* _description, const char* _url)
 	: entry::AppI(_name, _description, _url)
@@ -52,25 +51,37 @@ void Level5::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint
 
 	// Create vertex stream declaration.
 	PosTangentNormalTexcoordVertex::init();
-	PosVertex::init();
 
 	// Create texture sampler uniforms.
-	s_texColor =	bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
-	s_texNormal =	bgfx::createUniform("s_texNormal", bgfx::UniformType::Sampler);
-	s_texAorm =		bgfx::createUniform("s_texAorm", bgfx::UniformType::Sampler);
-	s_shadowmap = bgfx::createUniform("s_shadowmap", bgfx::UniformType::Sampler);
+	s_texColor		= bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+	s_texNormal		= bgfx::createUniform("s_texNormal", bgfx::UniformType::Sampler);
+	s_texAorm		= bgfx::createUniform("s_texAorm", bgfx::UniformType::Sampler);
+	s_shadowmap		= bgfx::createUniform("s_shadowmap", bgfx::UniformType::Sampler);
 
-	u_eyePos = bgfx::createUniform("u_eyePos", bgfx::UniformType::Vec4);
-	u_lightDir	=	bgfx::createUniform("u_lightDir", bgfx::UniformType::Vec4);
+	u_eyePos		= bgfx::createUniform("u_eyePos", bgfx::UniformType::Vec4);
+	u_lightDir		= bgfx::createUniform("u_lightDir", bgfx::UniformType::Vec4);
 	u_lightRadiance = bgfx::createUniform("u_lightRadiance", bgfx::UniformType::Vec4);
-	u_k = bgfx::createUniform("u_k", bgfx::UniformType::Vec4);
-	u_ambient = bgfx::createUniform("u_ambient", bgfx::UniformType::Vec4);
-	u_lightMVP = bgfx::createUniform("u_lightMVP", bgfx::UniformType::Mat4);
-	u_depthScaleOffset = bgfx::createUniform("u_depthScaleOffset", bgfx::UniformType::Vec4);
+	u_k				= bgfx::createUniform("u_k", bgfx::UniformType::Vec4);
+	u_ambient		= bgfx::createUniform("u_ambient", bgfx::UniformType::Vec4);
+	u_lightMtx		= bgfx::createUniform("u_lightMtx", bgfx::UniformType::Mat4);
 
 	// Create program from shaders.
-	m_programPBR = loadProgram("vs_cubes_PBR_withShadow", "fs_cubes_PBR_withShadow");
 	m_programShadow = loadProgram("vs_cubes_shadow", "fs_cubes_shadow");
+	m_programPBR = loadProgram("vs_cubes_PBR_withShadow", "fs_cubes_PBR_withShadow");
+
+	bgfx::TextureHandle fbtextures[] =
+	{
+		bgfx::createTexture2D(
+			  m_shadowmapSize
+			, m_shadowmapSize
+			, false
+			, 1
+			, bgfx::TextureFormat::D16
+			, BGFX_TEXTURE_RT | BGFX_SAMPLER_COMPARE_LEQUAL
+			),
+	};
+	m_shadowmap = fbtextures[0];
+	m_shadowmapFB = bgfx::createFrameBuffer(BX_COUNTOF(fbtextures), fbtextures, true);
 
 	// Load albedo texture.
 	m_textureColor = loadTexture("../resource/pbr_stone/pbr_stone_base_color.dds");
@@ -81,8 +92,52 @@ void Level5::init(int32_t _argc, const char* const* _argv, uint32_t _width, uint
 
 	m_mesh = meshLoad("../resource/pbr_stone/pbr_stone_mes.bin");
 
-	m_timeOffset = bx::getHPCounter();
 
+	m_state[0] = meshStateCreate();
+	m_state[0]->m_state = 0
+		| BGFX_STATE_WRITE_Z
+		| BGFX_STATE_DEPTH_TEST_LESS
+		| BGFX_STATE_CULL_CCW
+		| BGFX_STATE_MSAA
+		;
+	m_state[0]->m_program = m_programShadow;
+	m_state[0]->m_viewId = 0;
+	m_state[0]->m_numTextures = 0;
+
+	m_state[1] = meshStateCreate();
+	m_state[1]->m_state = 0
+		| BGFX_STATE_WRITE_RGB
+		| BGFX_STATE_WRITE_A
+		| BGFX_STATE_WRITE_Z
+		| BGFX_STATE_DEPTH_TEST_LESS
+		| BGFX_STATE_CULL_CCW
+		| BGFX_STATE_MSAA
+		;
+	m_state[1]->m_program = m_programPBR;
+	m_state[1]->m_viewId = 1;
+	m_state[1]->m_numTextures = 4;
+
+	m_state[1]->m_textures[0].m_flags = UINT32_MAX;
+	m_state[1]->m_textures[0].m_stage = 0;
+	m_state[1]->m_textures[0].m_sampler = s_texColor;
+	m_state[1]->m_textures[0].m_texture = m_textureColor;
+
+	m_state[1]->m_textures[1].m_flags = UINT32_MAX;
+	m_state[1]->m_textures[1].m_stage = 0;
+	m_state[1]->m_textures[1].m_sampler = s_texNormal;
+	m_state[1]->m_textures[1].m_texture = m_textureNormal;	
+	
+	m_state[1]->m_textures[2].m_flags = UINT32_MAX;
+	m_state[1]->m_textures[2].m_stage = 0;
+	m_state[1]->m_textures[2].m_sampler = s_texAorm;
+	m_state[1]->m_textures[2].m_texture = m_textureAorm;
+
+	m_state[1]->m_textures[3].m_flags = UINT32_MAX;
+	m_state[1]->m_textures[3].m_stage = 0;
+	m_state[1]->m_textures[3].m_sampler = s_shadowmap;
+	m_state[1]->m_textures[3].m_texture = m_shadowmap;
+
+	m_timeOffset = bx::getHPCounter();
 	imguiCreate();
 }
 
@@ -104,14 +159,14 @@ int Level5::shutdown()
 	bgfx::destroy(u_lightRadiance);
 	bgfx::destroy(u_k);
 	bgfx::destroy(u_ambient);
-	bgfx::destroy(u_lightMVP);
-	bgfx::destroy(u_depthScaleOffset);
+	bgfx::destroy(u_lightMtx);
 
 	bgfx::destroy(m_shadowmapFB);
-	meshUnload(m_mesh);
 
 	bgfx::destroy(m_programPBR);
-	//bgfx::destroy(m_programShadow)
+	bgfx::destroy(m_programShadow);
+
+	meshUnload(m_mesh);
 
 	// Shutdown bgfx.
 	bgfx::shutdown();
@@ -138,9 +193,22 @@ bool Level5::update()
 	// ---------------------------------- Draw Events
 	//
 	updateLight();
-	drawShadowmap();
-	drawPBRStone();
 
+	bgfx::setViewRect(0, 0, 0, m_shadowmapSize, m_shadowmapSize);
+	bgfx::setViewRect(1, 0, 0, uint16_t(m_width), uint16_t(m_height));
+
+
+
+	//bgfx::setViewFrameBuffer(0, m_shadowmapFB);
+
+	float modelMatrix[3][16];
+	bx::mtxSRT(modelMatrix[0], 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -20.80f, 0.0f);
+	bx::mtxSRT(modelMatrix[1], 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 9.0f, -20.80f, 9.0f);
+	bx::mtxSRT(modelMatrix[2], 10.0f, 5.0f, 10.0f, 0.0f, 0.0f, 0.0f, 9.0f, -55.80f, 9.0f);
+
+	drawShadowmap(m_mesh,modelMatrix[0]);
+
+	
 	bgfx::frame();
 	return true;
 }
@@ -180,9 +248,8 @@ void Level5::updateImgui()
 	ImGui::PushItemWidth(180.0f);
 	ImGui::Text("property:");
 	ImGui::Indent();
-	ImGui::SliderFloat("light Pos x", &m_light.pos.x, -100.0f, 100.0f);
-	ImGui::SliderFloat("light Pos y", &m_light.pos.y, -100.0f, 100.0f);
-	ImGui::SliderFloat("light Pos z", &m_light.pos.z, -100.0f, 100.0f);
+	ImGui::SliderFloat("light pos x", &m_light.pos.x, -100.0f, 100.0f);
+	ImGui::SliderFloat("light pos z", &m_light.pos.z, -100.0f, 100.0f);
 	ImGui::ColorWheel("light Radiance", m_light.radiance_colorWheel, 1.0f);
 	ImGui::ColorWheel("ambient", m_ambient, 1.0f);
 	ImGui::SliderFloat("k_diffuse", &m_k[0], 0.0f, 1.0f);
@@ -217,113 +284,40 @@ void Level5::updateInput()
 	m_camera.moveCamera(keyLeft * 0.01f, keyForward * 0.01f);	// 相机移动
 	m_camera.rotateCamera(m_mousex * 0.01f, m_mousey * 0.01f);	// 相机旋转
 	m_camera.updateView();										// 更新view变换
+	m_camera.updateProj(true, m_width, m_height);	// 投影变换
 }
 
 void Level5::updateLight()
 {
 	m_light.updateDirection();
 	m_light.updateRadiance();
+	m_light.updateProj();
 	m_light.updateView();
-	m_camera.updateProj(true, m_width, m_height);	// 投影变换
-	m_light.updateMVP();
+	m_light.updateLightMtx();
 }
 
-void Level5::drawShadowmap()
-{	
-	// Create shadowmap
-	bgfx::setViewRect(0, 0, 0, m_shadowmapSize, m_shadowmapSize);	
-	bgfx::setViewClear(0
-		, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH
-		, 0x303030ff, 1.0f, 0
-	);
-
-	bgfx::TextureHandle fbtextures[] =
-	{
-		bgfx::createTexture2D(
-			  m_shadowmapSize
-			, m_shadowmapSize
-			, false
-			, 1
-			, bgfx::TextureFormat::BGRA8
-			, BGFX_TEXTURE_RT
-			),		
-		bgfx::createTexture2D(
-			  m_shadowmapSize
-			, m_shadowmapSize
-			, false
-			, 1
-			, bgfx::TextureFormat::D16
-			, BGFX_TEXTURE_RT_WRITE_ONLY
-			),
-
-	};
-	m_shadowmap = fbtextures[0];
-	m_shadowmapFB = bgfx::createFrameBuffer(BX_COUNTOF(fbtextures), fbtextures, true);
-	bgfx::setViewFrameBuffer(0, m_shadowmapFB);
+void Level5::drawShadowmap(Mesh* mesh, float* modelMatrix)
+{
 	bgfx::setViewTransform(0, m_light.view, m_light.proj);
 
-	// 设置 shadow depthScaleOffset
-	float depthScaleOffset[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
-	if (bgfx::getCaps()->homogeneousDepth)
-	{
-		depthScaleOffset[0] = 0.5f;
-		depthScaleOffset[1] = 0.5f;
-	}
-	bgfx::setUniform(u_depthScaleOffset, depthScaleOffset);
-
-	// 设置渲染状态
-	bgfx::setState(
-		BGFX_STATE_WRITE_Z
-		| BGFX_STATE_DEPTH_TEST_LESS
-		| BGFX_STATE_CULL_CCW
-		| BGFX_STATE_MSAA
-	);
 	// 提交渲染命令
-	float modelMatrix[16];
-	bx::mtxSRT(modelMatrix, 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.80f, 0.0f);
-	meshSubmit(m_mesh, 0, m_programShadow, modelMatrix);
+	meshSubmit(mesh, &m_state[0],1, modelMatrix,3);
 }
 
-void Level5::drawPBRStone()
+void Level5::drawPBRStone(Mesh* mesh,float* modelMatrix)
 {	
-	bgfx::setViewRect(1, 0, 0, uint16_t(m_width), uint16_t(m_height));
-	bgfx::setViewClear(1
-		, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH
-		, 0x303030ff
-		, 1.0f
-		, 0
-	);
-
 	// 灯光相关	
 	bgfx::setUniform(u_lightDir, &m_light.direction);		// 设置 light direction
 	bgfx::setUniform(u_lightRadiance, m_light.radiance);	// 设置 radiance
-	// ambient
 	bgfx::setUniform(u_ambient, m_ambient);					// 设置 ambient
-	// 绑定纹理
-	bgfx::setTexture(0, s_texColor, m_textureColor);
-	bgfx::setTexture(1, s_texNormal, m_textureNormal);
-	bgfx::setTexture(2, s_texAorm, m_textureAorm);
-	bgfx::setTexture(3, s_shadowmap, m_shadowmap);
 
 	float* view = m_camera.view;
 	float* proj = m_camera.proj;
 	bgfx::setViewTransform(1, view, proj);			// 设置 view、proj
 	bgfx::setUniform(u_eyePos, &m_camera.pos);		// 设置 相机位置
 	bgfx::setUniform(u_k, m_k);						// 设置 diffuse、specular、ambient 系数
+	bgfx::setUniform(u_lightMtx, m_light.lightMtx);				// 设置 lightMtx
 
-	bgfx::setUniform(u_lightMVP, m_light.MVP);				// 设置 light mvp
-
-	// 设置渲染状态
-	bgfx::setState(
-		BGFX_STATE_WRITE_RGB
-		| BGFX_STATE_WRITE_A
-		| BGFX_STATE_WRITE_Z
-		| BGFX_STATE_DEPTH_TEST_LESS
-		| BGFX_STATE_CULL_CW
-		| BGFX_STATE_MSAA
-	);
 	// 提交渲染命令
-	float modelMatrix[16];
-	bx::mtxSRT(modelMatrix, 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.80f, 0.0f);
-	meshSubmit(m_mesh, 1, m_programPBR, modelMatrix);
+	meshSubmit(mesh, &m_state[1], 1, modelMatrix);
 }

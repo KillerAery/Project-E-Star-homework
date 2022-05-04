@@ -247,8 +247,8 @@ void Level4::drawPBRStone()
 	bgfx::setTexture(0, s_texColor, m_textureColor);
 	bgfx::setTexture(1, s_texNormal, m_textureNormal);
 	bgfx::setTexture(2, s_texAorm, m_textureAorm);
-	bgfx::setTexture(3, s_texCube, m_lightProbe.texLOD);
-	bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.texIrr);
+	bgfx::setTexture(3, s_texCube, m_lightProbe.getTexLOD());
+	bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.getTexIrr());
 	bgfx::setTexture(5, s_texLUT, m_texLUT);
 
 	// …Ë÷√‰÷»æ◊¥Ã¨
@@ -281,7 +281,7 @@ void Level4::drawSkybox()
 	bgfx::setUniform(u_mtx, m_camera.view_inv);
 
 	// ∞Û∂®Œ∆¿Ì
-	bgfx::setTexture(0, s_texCube, m_lightProbe.texLOD);
+	bgfx::setTexture(0, s_texCube, m_lightProbe.getTexLOD());
 
 	// …Ë÷√‰÷»æ◊¥Ã¨
 	bgfx::setState(

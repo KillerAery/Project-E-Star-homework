@@ -2,8 +2,8 @@
 
 #include "common.h"
 #include "bgfx_utils.h"
-#include "HomeworkCommon/LightProbe.h"
-#include "HomeworkCommon/Camera.h"
+#include "LightProbe.h"
+#include "Camera.h"
 
 using namespace Aery;
 

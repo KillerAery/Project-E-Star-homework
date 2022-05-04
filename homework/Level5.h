@@ -2,9 +2,9 @@
 
 #include "common.h"
 #include "bgfx_utils.h"
-#include "HomeworkCommon/LightProbe.h"
-#include "HomeworkCommon/Camera.h"
-#include "HomeworkCommon/DirectionalLight.h"
+#include "LightProbe.h"
+#include "Camera.h"
+#include "DirectionalLight.h"
 
 using namespace Aery;
 
@@ -29,13 +29,10 @@ public:
 	void updateLight();
 
 	// 绘制 shadowmap
-	void drawShadowmap();
+	void drawShadowmap(Mesh* mesh, float* modelMatrix);
 
 	// 绘制 PBR_Stone：使用 PBRwithShadow shader
-	void drawPBRStone();
-
-	// 绘制 cubes：使用 blinnphongwithShadow shader
-	void drawCubes();
+	void drawPBRStone(Mesh* mesh, float* modelMatrix);
 private:
 	uint32_t m_width;
 	uint32_t m_height;
@@ -44,6 +41,7 @@ private:
 
 	Camera m_camera;	// 相机
 	Mesh* m_mesh;		// 模型
+	MeshState* m_state[2];		// 模型渲染状态
 	DirectionalLight m_light;	// 方向光源
 
 	// 绘制相关
@@ -61,8 +59,7 @@ private:
 	bgfx::UniformHandle u_lightRadiance;
 	bgfx::UniformHandle u_k;
 	bgfx::UniformHandle u_ambient;
-	bgfx::UniformHandle u_lightMVP; 
-	bgfx::UniformHandle u_depthScaleOffset;
+	bgfx::UniformHandle u_lightMtx;
 
 	bgfx::ProgramHandle m_programShadow;
 	bgfx::ProgramHandle m_programPBR;
@@ -97,17 +94,4 @@ private:
 		};
 		static bgfx::VertexLayout ms_layout;
 	};	
-	struct PosVertex
-	{
-		float m_x, m_y, m_z;
-
-		static void init()
-		{
-			ms_layout
-				.begin()
-				.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-				.end();
-		};
-		static bgfx::VertexLayout ms_layout;
-	};
 };
