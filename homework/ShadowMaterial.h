@@ -15,7 +15,7 @@ namespace Aery {
 
 		void setState() override;
 
-		void drawMesh(IMesh& mesh, float* model)override;
+		void drawMesh(IMesh& mesh, float* model, int modelNums = 1)override;
 
 		uint16_t getShadowmapSize()const;
 

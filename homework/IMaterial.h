@@ -7,9 +7,9 @@ namespace Aery {
 	class IMaterial
 	{
 	public:
-		IMaterial();
+		IMaterial() {}
 
-		virtual ~IMaterial();
+		virtual ~IMaterial() {}
 
 		virtual void init() = 0;
 
@@ -17,6 +17,6 @@ namespace Aery {
 
 		virtual void setState() = 0;
 
-		virtual void drawMesh(IMesh& mesh, float* model = nullptr) = 0;
+		virtual void drawMesh(IMesh& mesh, float* model = nullptr,int modelNums=1) = 0;
 	};
 };

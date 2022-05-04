@@ -23,7 +23,7 @@ namespace Aery {
 		}
 
 		void updateProj(float area = 200.0f) {
-			bx::mtxOrtho(proj, -area, area, -area, area, 0.1f, 400.0f, 0.0f, 
+			bx::mtxOrtho(proj, -area, area, -area, area, 0.1f, 300.0f, 0.0f, 
 				bgfx::getCaps()->homogeneousDepth);
 		}
 

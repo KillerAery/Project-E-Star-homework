@@ -37,10 +37,10 @@ void Aery::ShadowMaterial::setState()
 {
 }
 
-void Aery::ShadowMaterial::drawMesh(IMesh& mesh, float* model)
+void Aery::ShadowMaterial::drawMesh(IMesh& mesh, float* model, int modelNums)
 {
 	if (mesh.getType() == 0) {
-		bgfx::submit(0, m_program);
+		bgfx::submit(1, m_program);
 	}
 	else {
 		meshSubmit(mesh.getMesh(), 1, m_program, model);

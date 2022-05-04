@@ -26,12 +26,9 @@ void Aery::SkyMaterial::setState()
 	);
 }
 
-void Aery::SkyMaterial::drawMesh(IMesh& mesh, float* model)
+void Aery::SkyMaterial::drawMesh(IMesh& mesh, float* model, int modelNums)
 {
 	if (mesh.getType() == 2) {
 		bgfx::submit(2, m_program);
-	}
-	else {
-		//do nothing
 	}
 }

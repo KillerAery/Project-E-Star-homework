@@ -33,7 +33,7 @@ void Aery::IBLMaterial::setState()
 	);
 }
 
-void Aery::IBLMaterial::drawMesh(IMesh& mesh, float* model)
+void Aery::IBLMaterial::drawMesh(IMesh& mesh, float* model, int modelNums)
 {
 	if (mesh.getType() == 1) {
 		meshSubmit(mesh.getMesh(), 0, m_program, model);

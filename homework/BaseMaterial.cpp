@@ -35,7 +35,7 @@ void Aery::BaseMaterial::setState()
 	bgfx::setState(state);
 }
 
-void Aery::BaseMaterial::drawMesh(IMesh& mesh, float* model)
+void Aery::BaseMaterial::drawMesh(IMesh& mesh, float* model, int modelNums)
 {
 	if (mesh.getType() == 0) {
 		bgfx::setTransform(model);

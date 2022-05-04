@@ -172,16 +172,18 @@ bool MyApp::update()
 	bgfx::setViewRect(2, 0, 0, uint16_t(m_width), uint16_t(m_height));
 
 
-	float modelMatrix[4][16];
+	float modelMatrix[3][16];
 	bx::mtxSRT(modelMatrix[0], 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	bx::mtxSRT(modelMatrix[1], 2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 9.0f, 0.0f, 9.0f);
-	bx::mtxSRT(modelMatrix[2], 10.0f, 5.0f, 10.0f, 0.0f, 0.0f, 0.0f, 9.0f, -2.80f, 9.0f);
-	bx::mtxSRT(modelMatrix[3], 10.0f, 10.0f, 10.0f, 45.0f, 45.0f, 45.0f, 0.0f, 0.0f, 0.0f);
+	bx::mtxSRT(modelMatrix[1], 10.0f, 10.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.0f, -70.0f, 0.0f);
+	bx::mtxSRT(modelMatrix[2], 10.0f, 10.0f, 10.0f, 45.0f, 45.0f, 45.0f, 0.0f, 0.0f, 0.0f);
 
 	// Shadow
 	// TODO
 	if (m_shadowOn) {
 		bgfx::setViewTransform(1, m_light.view, m_light.proj);
+		m_shadowMaterial.setState();
+		m_shadowMaterial.drawMesh(m_pbrMesh, modelMatrix[0]);
+		m_shadowMaterial.drawMesh(m_pbrMesh, modelMatrix[1]);
 	}
 
 	// Main
@@ -209,7 +211,7 @@ bool MyApp::update()
 		bgfx::setVertexBuffer(0, m_vbh);
 		bgfx::setIndexBuffer(m_ibh);
 		m_baseMaterial.setState();
-		m_baseMaterial.drawMesh(m_cubeMesh, modelMatrix[3]);
+		m_baseMaterial.drawMesh(m_cubeMesh, modelMatrix[2]);
 	}
 	else if (m_meshSelection == 1) {
 		if (m_materialSelection == 1) {
@@ -315,6 +317,9 @@ void MyApp::updateImgui()
 
 	}
 	else if (m_materialSelection == 1) {
+		ImGui::SliderFloat("lightDir x", &m_light.direction.x, -1.0f, 1.0f);
+		ImGui::SliderFloat("lightDir y", &m_light.direction.y, -1.0f, 1.0f);
+		ImGui::SliderFloat("lightDir z", &m_light.direction.z, -1.0f, 1.0f);
 		ImGui::ColorWheel("light intensity", m_light.radiance_colorWheel, 1.0f);
 		ImGui::SliderFloat("k_diffuse", &m_k[0], 0.0f, 1.0f);
 		ImGui::SliderFloat("k_specular", &m_k[1], 0.0f, 1.0f);

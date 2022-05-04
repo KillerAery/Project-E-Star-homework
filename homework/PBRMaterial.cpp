@@ -36,12 +36,9 @@ void Aery::PBRMaterial::setState()
 	bgfx::setState(state);
 }
 
-void Aery::PBRMaterial::drawMesh(IMesh& mesh, float* model)
+void Aery::PBRMaterial::drawMesh(IMesh& mesh, float* model, int modelNums)
 {
-	if (mesh.getType() == 0) {
-		//do nothing
-	}
-	else {
+	if (mesh.getType() == 1){
 		if (shadowOn) {
 			meshSubmit(mesh.getMesh(), 0, m_programWithShadow, model);
 		}
