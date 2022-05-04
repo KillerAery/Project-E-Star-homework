@@ -17,7 +17,11 @@ namespace Aery {
 
 		void drawMesh(IMesh& mesh, float* model, int modelNums = 1)override;
 
+		void setShadowOn(bool shadowOn);
+
 	private:
 		bgfx::ProgramHandle m_program;
+		bgfx::ProgramHandle m_programWithShadow;
+		bool shadowOn;
 	};
 };

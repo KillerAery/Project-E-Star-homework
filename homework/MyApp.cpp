@@ -168,7 +168,7 @@ bool MyApp::update()
 
 	bgfx::setViewRect(0, 0, 0, uint16_t(m_width), uint16_t(m_height));
 	bgfx::setViewRect(1, 0, 0, m_shadowMaterial.getShadowmapSize(), m_shadowMaterial.getShadowmapSize());
-	//bgfx::setViewFrameBuffer(1, );
+	bgfx::setViewFrameBuffer(1, m_shadowMaterial.getShadowmapFrameBuffer());
 	bgfx::setViewRect(2, 0, 0, uint16_t(m_width), uint16_t(m_height));
 
 
@@ -178,7 +178,9 @@ bool MyApp::update()
 	bx::mtxSRT(modelMatrix[2], 10.0f, 10.0f, 10.0f, 45.0f, 45.0f, 45.0f, 0.0f, 0.0f, 0.0f);
 
 	// Shadow
-	// TODO
+	m_PBRMaterial.setShadowOn(m_shadowOn);
+	m_blinnPhongMaterial.setShadowOn(m_shadowOn);
+	m_IBLMaterial.setShadowOn(m_shadowOn);
 	if (m_shadowOn) {
 		bgfx::setViewTransform(1, m_light.view, m_light.proj);
 		m_shadowMaterial.setState();
@@ -191,7 +193,7 @@ bool MyApp::update()
 	bgfx::setTexture(1, s_texNormal, m_pbrMesh.getTexNormal());
 	bgfx::setTexture(2, s_texAorm, m_pbrMesh.getTexAorm());
 	bgfx::setTexture(3, s_texCube, m_lightProbe.getTexLOD());
-	bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.getTexIrr());
+	//bgfx::setTexture(4, s_texCubeIrr, m_lightProbe.getTexIrr());
 	bgfx::setTexture(5, s_texLUT, m_IBLMaterial.getTexLUT());
 	bgfx::setTexture(6, s_shadowmap, m_shadowMaterial.getShadowmap());
 

@@ -19,8 +19,12 @@ namespace Aery {
 
 		bgfx::TextureHandle getTexLUT();
 
+		void setShadowOn(bool shadowOn);
+
 	private:
 		bgfx::ProgramHandle m_program;
-		bgfx::TextureHandle m_texLUT;
+		bgfx::TextureHandle m_texLUT;		
+		bgfx::ProgramHandle m_programWithShadow;
+		bool shadowOn;
 	};
 };

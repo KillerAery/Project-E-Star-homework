@@ -13,6 +13,7 @@ void Aery::IBLMaterial::init()
 {
 	m_program = loadProgram("vs_IBL", "fs_IBL");
 	m_texLUT = loadTexture("../resource/GGX_E_LUT.dds");
+	m_programWithShadow = loadProgram("vs_IBL_withShadow", "fs_IBL_withShadow");
 }
 
 void Aery::IBLMaterial::destory()
@@ -36,11 +37,21 @@ void Aery::IBLMaterial::setState()
 void Aery::IBLMaterial::drawMesh(IMesh& mesh, float* model, int modelNums)
 {
 	if (mesh.getType() == 1) {
-		meshSubmit(mesh.getMesh(), 0, m_program, model);
+		if (shadowOn) {
+			meshSubmit(mesh.getMesh(), 0, m_programWithShadow, model);
+		}
+		else {
+			meshSubmit(mesh.getMesh(), 0, m_program, model);
+		}
 	}
 }
 
 bgfx::TextureHandle Aery::IBLMaterial::getTexLUT()
 {
 	return m_texLUT;
+}
+
+void Aery::IBLMaterial::setShadowOn(bool shadowOn)
+{
+	this->shadowOn = shadowOn;
 }

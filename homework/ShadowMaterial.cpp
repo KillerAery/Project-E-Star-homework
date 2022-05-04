@@ -31,6 +31,8 @@ void Aery::ShadowMaterial::init()
 void Aery::ShadowMaterial::destory()
 {
 	bgfx::destroy(m_program);
+	bgfx::destroy(m_shadowmap);
+	bgfx::destroy(m_shadowmapFB);
 }
 
 void Aery::ShadowMaterial::setState()
@@ -55,4 +57,9 @@ uint16_t Aery::ShadowMaterial::getShadowmapSize() const
 bgfx::TextureHandle Aery::ShadowMaterial::getShadowmap()
 {
 	return m_shadowmap;
+}
+
+bgfx::FrameBufferHandle Aery::ShadowMaterial::getShadowmapFrameBuffer()
+{
+	return m_shadowmapFB;
 }

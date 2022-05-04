@@ -20,6 +20,8 @@ namespace Aery {
 		uint16_t getShadowmapSize()const;
 
 		bgfx::TextureHandle getShadowmap();
+
+		bgfx::FrameBufferHandle getShadowmapFrameBuffer();
 	private:
 		uint16_t m_shadowmapSize;
 

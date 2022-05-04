@@ -5,6 +5,7 @@ $input v_wpos, v_tangent, v_bitangent, v_normal, v_texcoord0
 SAMPLER2D(s_texColor,  	0);
 SAMPLER2D(s_texNormal,	1);
 SAMPLER2D(s_texAorm,  	2);
+
 uniform vec4 u_eyePos;
 uniform vec4 u_lightDir;
 uniform vec4 u_lightRadiance;
