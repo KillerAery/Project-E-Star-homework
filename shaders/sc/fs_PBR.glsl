@@ -1,10 +1,12 @@
 $input v_wpos, v_tangent, v_bitangent, v_normal, v_texcoord0
 
 #include "common.sh"
+#include "shadow.glsl"
 
 SAMPLER2D(s_texColor,  	0);
 SAMPLER2D(s_texNormal,	1);
 SAMPLER2D(s_texAorm,  	2);
+SAMPLER2DSHADOW(s_shadowmap, 6);
 
 uniform vec4 u_eyePos;
 uniform vec4 u_lightDir;
@@ -14,7 +16,7 @@ uniform vec4 u_ambient;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
-	float PI = 3.14159265359;
+	const float PI = 3.1415926;
     float a = roughness * roughness;
     float NdotH = max(dot(N, H), 0.0);
 	float denom = (NdotH * NdotH * (a*a - 1.0) + 1.0);
@@ -50,6 +52,7 @@ vec3 fresnelSchlick(vec3 F0, vec3 V, vec3 H)
 
 void main()
 {
+	const float PI = 3.1415926;
 	// albedo
   	vec3 albedo = pow(texture2D(s_texColor, v_texcoord0).rgb, vec3(2.2,2.2,2.2));
 	// 切线空间下的 texture normal
@@ -66,7 +69,7 @@ void main()
   	float roughness = aorm.y;
   	float metallic = aorm.z;
 	// view
-	vec3 V = normalize(u_eyePos.xyz - v_wpos);
+	vec3 V = normalize(u_eyePos - v_wpos).xyz;
 	vec3 N = normalize(normal);
   	float NdotV = max(dot(N, V), 0.0);
   	vec3 L = normalize(u_lightDir.xyz);
@@ -83,11 +86,10 @@ void main()
   	vec3 F = fresnelSchlick(F0, V, H);
 	// Cook-Torrance specular BRDF
   	vec3 numerator    =  NDF * G * F; 
-  	float denominator = max((4.0 * NdotL * NdotV), 0.001);
+  	float denominator = max((4.0 * NdotL * NdotV), 0.00001);
   	vec3 specular =  numerator / denominator;
 	// diffuse BRDF
-	float PI = 3.14159265359;
-	vec3 diffuse = max(albedo / PI, 0.0001);
+	vec3 diffuse = albedo / PI;
 	// ambient
 	vec3 ambient = albedo * u_ambient.xyz;
 	// Lo
@@ -95,10 +97,9 @@ void main()
 	float ks = u_k.y;
 	float ka = u_k.z;
   	vec3 radiance = u_lightRadiance.xyz;
-  	vec3 Lo = (ks * specular + kd * diffuse) * radiance * NdotL 
-	  + ka * ambient * ao;
+  	vec3 Lo = (ks * specular + kd * diffuse) * radiance * NdotL;
 	// FragColor
-  	vec3 color = Lo;
+  	vec3 color = Lo + ka * ambient * ao;
   	color = color / (color + vec3(1.0,1.0,1.0));
   	color = pow(color, vec3(1.0/2.2,1.0/2.2,1.0/2.2)); 
   	gl_FragColor = vec4(color, 1.0);

@@ -3,11 +3,12 @@ $output v_wpos, v_tangent, v_bitangent, v_normal, v_texcoord0
 
 #include "common.sh"
 
+uniform mat4 u_lightMtx;
+
 void main()
 {
 	// v_wpos
-	vec3 wpos = mul(u_model[0], vec4(a_position.xyz, 1.0) ).xyz;
-	v_wpos = wpos;
+	v_wpos = mul(u_model[0], vec4(a_position.xyz, 1.0) );
 
 	// v_tangent v_normal v_bitangent
 	vec3 normal = a_normal.xyz;
@@ -27,5 +28,5 @@ void main()
 	v_texcoord0 = texcoord;
 
 	// gl_Position
-	gl_Position = mul(u_viewProj, vec4(v_wpos, 1.0));
+	gl_Position = mul(u_viewProj, v_wpos);
 }

@@ -1,8 +1,11 @@
-$input v_wpos, v_wnormal, v_texcoord0
+$input v_wpos, v_normal, v_texcoord0
 
 #include "common.sh"
+#include "shadow.glsl"
 
 SAMPLER2D(s_texColor,  0);
+SAMPLER2DSHADOW(s_shadowmap, 6);
+
 uniform vec4 u_k;
 uniform vec4 u_lightDir;
 uniform vec4 u_ambient;
@@ -18,7 +21,7 @@ vec3 blinnphong(vec3 _wpos, vec3 _wnormal, vec3 _viewDir)
 	// ambient
 	vec3 ambient = ka* u_ambient.xyz;
 	// diffuse
-	vec3 lightDir = u_lightDir;
+	vec3 lightDir = u_lightDir.xyz;
 	vec3 diffuse = kd * u_lightRadiance.xyz * max(dot(_wnormal,lightDir),0.0);
 	// specular
 	vec3 h = normalize(_viewDir+lightDir);
@@ -28,12 +31,12 @@ vec3 blinnphong(vec3 _wpos, vec3 _wnormal, vec3 _viewDir)
 
 void main()
 {
-	vec3 wnormal = normalize(v_wnormal);
+	vec3 wnormal = normalize(v_normal);
 	vec3 eyePos = mul(vec4(0.0, 0.0, 0.0, 1.0), u_view).xyz;
-	vec3 eyedir = normalize(eyePos - v_wpos);
+	vec3 eyedir = normalize(eyePos - v_wpos.xyz);
 
 	vec3 color = 
-	blinnphong(v_wpos,wnormal,eyedir) *
+	blinnphong(v_wpos.xyz,wnormal,eyedir) *
 	toLinear(texture2D(s_texColor, v_texcoord0)).xyz;
 
   	color = color / (color + vec3(1.0,1.0,1.0));

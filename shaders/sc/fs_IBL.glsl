@@ -1,6 +1,7 @@
 $input v_wpos, v_tangent, v_bitangent, v_normal, v_texcoord0
 
 #include "common.sh"
+#include "shadow.glsl"
 
 SAMPLER2D(s_texColor,  	0);
 SAMPLER2D(s_texNormal,	1);
@@ -8,6 +9,7 @@ SAMPLER2D(s_texAorm,  	2);
 SAMPLERCUBE(s_texCube, 	3);
 SAMPLERCUBE(s_texCubeIrr, 4);
 SAMPLER2D(s_texLUT,  	5);
+SAMPLER2DSHADOW(s_shadowmap, 6);
 
 uniform vec4 u_eyePos;
 uniform vec4 u_lightDir;
@@ -70,7 +72,7 @@ void main()
   	float roughness = aorm.y;
   	float metallic = aorm.z;
 	// view
-	vec3 V = normalize(u_eyePos.xyz - v_wpos);
+	vec3 V = normalize(u_eyePos.xyz - v_wpos.xyz);
 	vec3 N = normalize(normal);
   	float NdotV = max(dot(N, V), 0.0);
   	vec3 L = normalize(u_lightDir.xyz);
