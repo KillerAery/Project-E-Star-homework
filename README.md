@@ -55,7 +55,7 @@ Features：
 
 IBL Material（split sum 方法）：
 
-<img src="https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041828013.png" alt="image-20220504182911546" style="zoom:67%;" />
+![homework_K27ygIAeK5](https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205050921384.jpg)
 
 ## Level5
 
@@ -73,7 +73,7 @@ PBR with ShadowMap：
 
 IBL（split sum）with ShadowMap：
 
-<img src="https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041829036.png" alt="image-20220504182911546" style="zoom:67%;" />
+![homework_JVER2cehsN](https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205050921502.jpg)
 
 # Framework
 
