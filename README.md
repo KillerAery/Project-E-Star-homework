@@ -15,7 +15,7 @@ Features：
 
 Base Material：
 
-<img src="https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041824181.png" alt="image-20220504182404039" style="zoom: 67%;" />
+<img src="https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226389.png" alt="image-20220504182404039" style="zoom: 67%;" />
 
 ## Level2
 
@@ -28,7 +28,7 @@ Features：
 
 BlinnPhong Material：
 
-<img src="https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041827682.png" alt="image-20220504182742561" style="zoom:67%;" />
+<img src="https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226390.png" alt="image-20220504182742561" style="zoom:67%;" />
 
 ## Level3
 
@@ -42,7 +42,7 @@ Features：
 
 PBR Material：
 
-<img src="https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041827984.png" alt="image-20220504182722869" style="zoom: 67%;" />
+<img src="https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226391.png" alt="image-20220504182722869" style="zoom: 67%;" />
 
 ## Level4
 
@@ -55,7 +55,7 @@ Features：
 
 IBL Material（split sum 方法）：
 
-![homework_K27ygIAeK5](https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205050921384.jpg)
+![homework_K27ygIAeK5](https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226392.jpg)
 
 ## Level5
 
@@ -65,19 +65,19 @@ Features：
 
 BlinnPhong with ShadowMap：
 
-<img src="https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041829668.png" alt="image-20220504182928586" style="zoom:67%;" />
+<img src="https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226393.png" alt="image-20220504182928586" style="zoom:67%;" />
 
 PBR with ShadowMap：
 
-<img src="https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041829667.png" alt="image-20220504182911546" style="zoom:67%;" />
+<img src="https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226394.png" alt="image-20220504182911546" style="zoom:67%;" />
 
 IBL（split sum）with ShadowMap：
 
-![homework_JVER2cehsN](https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205050921502.jpg)
+![homework_JVER2cehsN](https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226395.jpg)
 
 # Framework
 
-![image-20220504182109124](https://gitee.com/KillerAery/image/raw/master/MarkdownImage/202205041821230.png)
+![image-20220504182109124](https://imagebed-aery.oss-cn-hangzhou.aliyuncs.com/202205192226396.png)
 
 ## MyApp
 
